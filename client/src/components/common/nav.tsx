@@ -1,6 +1,7 @@
-"use client"
+"use client";
 import Link from "next/link";
 import { useState } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 interface NavbarProps {
   onLoginClick?: () => void;
@@ -8,6 +9,19 @@ interface NavbarProps {
 
 const Navbar = ({ onLoginClick }: NavbarProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
+
+  const handleLogin = () => {
+    if (onLoginClick) {
+      onLoginClick();
+    }
+    signIn();
+  };
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/" });
+  };
 
   return (
     <nav className="bg-white shadow-sm fixed w-full z-10">
@@ -33,18 +47,31 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
             >
               Features
             </a>
-            <button
-              onClick={onLoginClick}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
-            >
-              Log In
-            </button>
-            <Link
-              href="/signup"
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-800 hover:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
-            >
-              Sign Up
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <button
+                  onClick={handleLogout}
+                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+                >
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleLogin}
+                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+                >
+                  Log In
+                </button>
+                <Link
+                  href="/signup"
+                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-800 hover:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
             <button
@@ -88,22 +115,36 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
             >
               Features
             </a>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onLoginClick();
-              }}
-              className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-indigo-700 hover:bg-indigo-50"
-            >
-              Log In
-            </button>
-            <Link
-              href="/signup"
-              className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-indigo-800 hover:bg-indigo-50"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Sign Up
-            </Link>
+            {isAuthenticated ? (
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-red-700 hover:bg-red-50"
+              >
+                Log Out
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    handleLogin();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-indigo-700 hover:bg-indigo-50"
+                >
+                  Log In
+                </button>
+                <Link
+                  href="/signup"
+                  className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-indigo-800 hover:bg-indigo-50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

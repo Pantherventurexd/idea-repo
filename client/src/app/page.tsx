@@ -1,9 +1,12 @@
 import LandingPage from "./landing-page/page";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function Home() {
   return (
     <div>
-     <LandingPage/>
+      <ProtectedRoute>
+        <LandingPage />
+      </ProtectedRoute>
     </div>
   );
 }
