@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useAuthStore } from "../../store/authStore";
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   onLoginClick?: () => void;
@@ -9,18 +10,20 @@ interface NavbarProps {
 
 const Navbar = ({ onLoginClick }: NavbarProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: session, status } = useSession();
-  const isAuthenticated = status === "authenticated";
+  const { isAuthenticated, logout } = useAuthStore();
+  const router = useRouter();
 
   const handleLogin = () => {
     if (onLoginClick) {
       onLoginClick();
+    } else {
+      // If no onLoginClick prop is provided, navigate to login page
+      router.push("/login");
     }
-    signIn();
   };
 
   const handleLogout = () => {
-    signOut({ callbackUrl: "/" });
+    logout();
   };
 
   return (

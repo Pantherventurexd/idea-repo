@@ -1,10 +1,13 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthStore } from "../../store/authStore";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function LoginPage() {
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState<{
     google: boolean;
     github: boolean;
@@ -15,20 +18,54 @@ export default function LoginPage() {
     twitter: false,
   });
 
+  const { isAuthenticated, isLoading: authLoading, login } = useAuthStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check for auth errors in URL query params
+    const authError = searchParams?.get("authError");
+    if (authError === "supabase") {
+      setError("Authentication failed with identity provider");
+    } else if (authError === "backend") {
+      setError("User registration failed. Please try again.");
+    } else if (authError === "connection") {
+      setError("Connection to server failed. Please try again.");
+    }
+
+    // Redirect if already authenticated
+    if (isAuthenticated && !authLoading) {
+      router.push("/");
+    }
+  }, [isAuthenticated, authLoading, router, searchParams]);
+
   const handleLogin = async (provider: "google" | "github" | "twitter") => {
     setIsLoading({ ...isLoading, [provider]: true });
+    setError("");
+
     try {
-      const result = await signIn(provider, { callbackUrl: "/" });
-      if (result?.error) {
-        console.error(`Error signing in with ${provider}:`, result.error);
-      }
+      console.log(`Starting ${provider} login flow`);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            // You can add additional params here if needed
+            // For example: access_type: 'offline' for Google
+          },
+        },
+      });
+
+      if (error) throw error;
     } catch (error) {
       console.error(`Error signing in with ${provider}:`, error);
+      setError(error instanceof Error ? error.message : "Login failed");
     } finally {
       setIsLoading({ ...isLoading, [provider]: false });
     }
   };
 
+  // The rest of your component remains the same
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -120,11 +157,55 @@ export default function LoginPage() {
                 viewBox="0 0 24 24"
                 fill="#1DA1F2"
               >
-                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
               </svg>
             )}
             <span>Continue with Twitter</span>
           </button>
+
+          {error && (
+            <div className="rounded-md bg-red-50 p-4 mt-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-gray-50 px-2 text-gray-500">Need help?</span>
+            </div>
+          </div>
+          <div className="mt-6 text-center text-sm">
+            <Link
+              href="/forgot-password"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Forgot your password?
+            </Link>
+          </div>
         </div>
       </div>
     </div>
