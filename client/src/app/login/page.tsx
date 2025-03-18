@@ -23,8 +23,13 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Check for auth errors in URL query params
+    const isOAuthFlow =
+      searchParams?.get("provider") ||
+      window.location.href.includes("auth/callback");
+
+    const authSuccess = searchParams?.get("authSuccess");
     const authError = searchParams?.get("authError");
+
     if (authError === "supabase") {
       setError("Authentication failed with identity provider");
     } else if (authError === "backend") {
@@ -33,8 +38,17 @@ export default function LoginPage() {
       setError("Connection to server failed. Please try again.");
     }
 
-    // Redirect if already authenticated
-    if (isAuthenticated && !authLoading) {
+    // Check for successful authentication
+    if (authSuccess === "true") {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          console.log("Session obtained after successful auth");
+        }
+      });
+    }
+
+    // Only redirect if authenticated and not in OAuth flow
+    if (isAuthenticated && !authLoading && !isOAuthFlow) {
       router.push("/");
     }
   }, [isAuthenticated, authLoading, router, searchParams]);
@@ -45,18 +59,18 @@ export default function LoginPage() {
 
     try {
       console.log(`Starting ${provider} login flow`);
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            // You can add additional params here if needed
-            // For example: access_type: 'offline' for Google
-          },
-        },
+        options: {},
       });
 
       if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+
+      console.log("OAuth response:", data);
     } catch (error) {
       console.error(`Error signing in with ${provider}:`, error);
       setError(error instanceof Error ? error.message : "Login failed");

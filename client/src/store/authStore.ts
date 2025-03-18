@@ -6,15 +6,18 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  authCode: string | null;
   initialize: () => Promise<void>;
   login: (provider: "google" | "github" | "twitter") => Promise<void>;
   logout: () => Promise<void>;
+  setAuthCode: (code: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
+  authCode: null,
 
   initialize: async () => {
     try {
@@ -68,4 +71,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     }
   },
+
+  setAuthCode: (code: string | null) => set({ authCode: code }),
 }));

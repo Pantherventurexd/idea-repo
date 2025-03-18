@@ -1,0 +1,30 @@
+2025-03-17T19:57:48.173Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T19:57:48.174Z: Code parameter present: No
+2025-03-17T19:57:48.174Z: Fallback redirect happening
+2025-03-17T20:01:13.224Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T20:01:13.225Z: Code parameter present: No
+2025-03-17T20:01:13.225Z: Fallback redirect happening
+2025-03-17T20:05:29.527Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T20:05:29.528Z: Code parameter present: No
+2025-03-17T20:05:29.528Z: Fallback redirect happening
+2025-03-17T20:06:35.958Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T20:06:35.959Z: Code parameter present: No
+2025-03-17T20:06:35.959Z: Fallback redirect happening
+2025-03-17T20:07:07.117Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T20:07:07.118Z: Code parameter present: No
+2025-03-17T20:07:07.118Z: Fallback redirect happening
+2025-03-17T20:08:15.890Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T20:08:15.890Z: Code parameter present: No
+2025-03-17T20:08:15.891Z: Fallback redirect happening
+2025-03-17T20:08:35.891Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T20:08:35.893Z: Code parameter present: No
+2025-03-17T20:08:35.893Z: Fallback redirect happening
+2025-03-17T20:09:15.309Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-17T20:09:15.309Z: Code parameter present: No
+2025-03-17T20:09:15.310Z: Fallback redirect happening
+2025-03-18T04:39:13.797Z: Auth callback route hit: http://localhost:3000/auth/callback
+2025-03-18T04:39:13.798Z: Code parameter present: No
+2025-03-18T04:39:13.800Z: Exchanging code for session...
+2025-03-18T04:39:14.901Z: Exchange complete: Error: fetch failed
+2025-03-18T04:39:14.901Z: Session data exists: No
+2025-03-18T04:39:14.902Z: Error exchanging code for session: {"__isAuthError":true,"name":"AuthRetryableFetchError","status":0}

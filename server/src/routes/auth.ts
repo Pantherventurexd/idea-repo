@@ -2,9 +2,15 @@ import express, { type Request, type Response } from "express";
 import User from "../models/user";
 import dotenv from "dotenv";
 import cors from "cors";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 const router = express.Router();
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 router.use(
   cors({
@@ -25,28 +31,30 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
   });
 
   try {
-    const token =
-      req.body.token ||
-      (req.headers.authorization?.startsWith("Bearer ")
-        ? req.headers.authorization.substring(7)
-        : null);
+    const token = req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.substring(7)
+      : null;
 
     if (!token) {
       console.log("No token provided in request");
-      return res.status(400).json({ error: "No token provided" });
+      return res.status(401).json({ error: "No token provided" });
     }
 
-    const { user } = req.body;
+    // Verify and get user data from Supabase
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
-    if (!user || !user.id || !user.email) {
-      console.log("Invalid user data:", user);
-      return res.status(400).json({ error: "User data is missing" });
+    if (error || !user) {
+      console.error("Error verifying token:", error);
+      return res.status(401).json({ error: "Invalid token" });
     }
 
     const { id: supabase_id, email, user_metadata } = user;
     const name = user_metadata?.full_name || user_metadata?.name || "Unknown";
     const picture = user_metadata?.avatar_url || user_metadata?.picture || "";
-    const provider = req.body.provider || "oauth";
+    const provider = user.app_metadata.provider || "oauth";
 
     console.log("Looking for existing user with supabase_id:", supabase_id);
     let existingUser = await User.findOne({ supabase_id });
@@ -63,9 +71,13 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
       console.log("New user created with ID:", existingUser._id);
     } else {
       console.log("Existing user found:", existingUser._id);
-      (existingUser as any).name = name;
-      (existingUser as any).image = picture;
-      existingUser.provider = provider;
+      existingUser.name = name;
+      existingUser.image = picture;
+      existingUser.provider = provider as
+        | "oauth"
+        | "google"
+        | "github"
+        | "twitter";
       await existingUser.save();
       console.log("Existing user updated");
     }
@@ -80,7 +92,6 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-// Add a test endpoint to verify API connectivity
 router.get("/test", (req: Request, res: Response) => {
   res.status(200).json({ message: "Auth API is working" });
 });
