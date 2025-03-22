@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import Link from "next/link";
 
 const SubmitIdeaPage: React.FC = () => {
   const [formData, setFormData] = useState<{
@@ -10,6 +9,7 @@ const SubmitIdeaPage: React.FC = () => {
     market: string;
     monetization: string;
     industry: string;
+    accessToken: string;
   }>({
     title: "",
     problem: "",
@@ -17,9 +17,16 @@ const SubmitIdeaPage: React.FC = () => {
     market: "",
     monetization: "",
     industry: "",
+    accessToken: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [analysis, setAnalysis] = useState<{
+    plagiarism_score: number;
+    existing_startups: string[];
+    competitors: string[];
+  } | null>(null);
+
   const [submitResult, setSubmitResult] = useState<{
     success: boolean;
     score?: number;
@@ -40,17 +47,35 @@ const SubmitIdeaPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Here you would integrate with your AI evaluation system
-      // Mock API call for demonstration
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const accessToken =
+        "eyJhbGciOiJIUzI1NiIsImtpZCI6IkpsTTJWeXdZVU9VNzl2bHciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL296eHdobHZ3a3FmaWJxYXhjZmh0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI2OGI5ZmYzOC05OTlmLTQ0NGYtODVlMy0yNmNjMDU4NGQyZTkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzQyNjQwMTQ1LCJpYXQiOjE3NDI2MzY1NDUsImVtYWlsIjoibGlraGl0aHJlZGR5MTUwQGdtYWlsLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZ29vZ2xlIiwicHJvdmlkZXJzIjpbImdvb2dsZSJdfSwidXNlcl9tZXRhZGF0YSI6eyJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSVJpZ0h5QS1oVkoxcE5qZk9uYzlTM0locTlTSW5sNjBDZERPVFJrQzJOQWM5SUdvZjAzUT1zOTYtYyIsImVtYWlsIjoibGlraGl0aHJlZGR5MTUwQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJsaWtoaXRoIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwibmFtZSI6Imxpa2hpdGgiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJUmlnSHlBLWhWSjFwTmpmT25jOVMzSWhxOVNJbmw2MENkRE9UUmtDMk5BYzlJR29mMDNRPXM5Ni1jIiwicHJvdmlkZXJfaWQiOiIxMTA4NDA2MTc4MzM5MDAxNzg3NDEiLCJzdWIiOiIxMTA4NDA2MTc4MzM5MDAxNzg3NDEifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvYXV0aCIsInRpbWVzdGFtcCI6MTc0MjYzNjU0NX1dLCJzZXNzaW9uX2lkIjoiNmYwYWZjMzctZGFhZC00MWFkLTg1MjYtMjE1MWFkMDhiYTU2IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.pGVOuVz1gWwtB1j3nNZCGYiBluTPX9CDr-IjfYInGO8";
 
-      // Mock successful submission
-      setSubmitResult({
-        success: true,
-        score: 85,
-        message:
-          "Your idea has been evaluated and approved! You now have access to 10 more ideas.",
+      const response = await fetch("http://localhost:5000/api/submit-idea", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          accessToken,
+        }),
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitResult({
+          success: true,
+          score: result.score,
+          message: result.message,
+        });
+        setAnalysis(result.analysis);
+      } else {
+        setSubmitResult({
+          success: false,
+          message: result.message,
+        });
+      }
     } catch (error) {
       setSubmitResult({
         success: false,
@@ -63,7 +88,6 @@ const SubmitIdeaPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-
       {/* Main Content */}
       <div className="pt-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -131,55 +155,47 @@ const SubmitIdeaPage: React.FC = () => {
                         ? "Idea Submitted Successfully"
                         : "Submission Failed"}
                     </h3>
-                    <div className="mt-2 text-sm text-gray-700">
-                      <p>{submitResult.message}</p>
-                      {submitResult.success && (
-                        <div className="mt-4">
-                          <div className="bg-white shadow overflow-hidden rounded-md p-4 border border-green-200">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  AI Evaluation Score
-                                </p>
-                                <p className="text-3xl font-bold text-gray-900">
-                                  {submitResult.score}/100
-                                </p>
-                              </div>
-                              <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
-                                <svg
-                                  className="h-8 w-8 text-green-600"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
+                    {submitResult?.success && analysis && (
+                      <div className="mt-4">
+                        <h3 className="text-xl font-semibold text-gray-800">
+                          Analysis
+                        </h3>
+                        <div className="bg-white shadow overflow-hidden rounded-md p-4 border border-gray-200 mt-2">
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-900">
+                              Plagiarism Score
+                            </p>
+                            <p className="text-lg font-bold text-gray-800">
+                              {analysis.plagiarism_score}%
+                            </p>
                           </div>
-                          <div className="mt-4 flex">
-                            <Link
-                              href="/browse-ideas"
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                              Browse Ideas Now
-                            </Link>
-                            <Link
-                              href="/submit-idea"
-                              className="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                              onClick={() => setSubmitResult(null)}
-                            >
-                              Submit Another Idea
-                            </Link>
+
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-900">
+                              Existing Startups
+                            </p>
+                            <ul className="list-disc pl-5 text-gray-700">
+                              {analysis.existing_startups.map(
+                                (startup, index) => (
+                                  <li key={index}>{startup}</li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              Competitors
+                            </p>
+                            <ul className="list-disc pl-5 text-gray-700">
+                              {analysis.competitors.map((competitor, index) => (
+                                <li key={index}>{competitor}</li>
+                              ))}
+                            </ul>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -364,27 +380,6 @@ const SubmitIdeaPage: React.FC = () => {
                 </div>
               </form>
             )}
-          </div>
-
-          <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Tips for a Successful Submission
-              </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Follow these guidelines to ensure your idea passes our AI
-                evaluation.
-              </p>
-            </div>
-            <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-              <ul className="list-disc pl-5">
-                <li>Be clear and concise in your problem statement.</li>
-                <li>Provide a detailed solution description.</li>
-                <li>Identify your target market accurately.</li>
-                <li>Explain your monetization strategy clearly.</li>
-                <li>Choose the most relevant industry for your idea.</li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>

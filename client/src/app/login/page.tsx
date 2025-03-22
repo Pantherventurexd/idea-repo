@@ -1,23 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "../../store/authStore";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient"; // Assuming you have supabase client configured
+import { useAuthStore } from "../../store/authStore"; // Assuming you're using a store for authentication
+import Link from "next/link";
 
 export default function LoginPage() {
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState<{
-    google: boolean;
-    github: boolean;
-    twitter: boolean;
-  }>({
+  const [isLoading, setIsLoading] = useState({
     google: false,
     github: false,
     twitter: false,
   });
-
   const { isAuthenticated, isLoading: authLoading, login } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,10 +21,10 @@ export default function LoginPage() {
     const isOAuthFlow =
       searchParams?.get("provider") ||
       window.location.href.includes("auth/callback");
-
     const authSuccess = searchParams?.get("authSuccess");
     const authError = searchParams?.get("authError");
 
+    // Handle errors based on URL params
     if (authError === "supabase") {
       setError("Authentication failed with identity provider");
     } else if (authError === "backend") {
@@ -38,16 +33,46 @@ export default function LoginPage() {
       setError("Connection to server failed. Please try again.");
     }
 
-    // Check for successful authentication
+    // If authentication is successful, check the session
     if (authSuccess === "true") {
-      supabase.auth.getSession().then(({ data }) => {
+      supabase.auth.getSession().then(async ({ data }) => {
         if (data.session) {
-          console.log("Session obtained after successful auth");
+          console.log("Session obtained after successful auth:", data.session);
+
+          const user = data.session.user;
+
+          // Make an API call to create the user in your backend
+          try {
+            const response = await fetch(
+              "http://localhost:5000/api/create_user",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  email: user?.email,
+                  accessToken: data.session.access_token,
+                }),
+              }
+            );
+
+            const responseData = await response.json();
+            if (response.ok) {
+              console.log("User created:", responseData);
+            } else {
+              console.error("Error creating user:", responseData);
+              setError(responseData.message);
+            }
+          } catch (error) {
+            console.error("Error making API call:", error);
+            setError("Error creating user. Please try again.");
+          }
         }
       });
     }
 
-    // Only redirect if authenticated and not in OAuth flow
+    // Redirect if already authenticated
     if (isAuthenticated && !authLoading && !isOAuthFlow) {
       router.push("/");
     }
@@ -78,7 +103,6 @@ export default function LoginPage() {
       setIsLoading({ ...isLoading, [provider]: false });
     }
   };
-
   // The rest of your component remains the same
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

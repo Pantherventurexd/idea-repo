@@ -20,6 +20,7 @@ const IdeaSchema: Schema = new Schema(
     monetization: { type: String, required: true },
     industry: { type: String, required: true },
     submittedAt: { type: Date, default: Date.now },
+    accessToken: { type: String, required: true },
   },
   {
     timestamps: true,
