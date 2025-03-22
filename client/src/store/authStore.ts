@@ -69,10 +69,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         user: null,
         isAuthenticated: false,
-        authCode: null, // Make sure to clear the auth code as well
+        authCode: null,
       });
-
-      // Force a page reload to clear any cached state
+      localStorage.clear();
+      
       window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
