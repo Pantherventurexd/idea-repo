@@ -1,29 +1,16 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import mongoose from "mongoose";
 
-dotenv.config();
+const mongoURI =
+  "mongodb+srv://likhithreddy150:12jVCeYLJ0TmeTw1@cluster0.3fmhl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/myapp';
-
-export const connectDB = async (): Promise<void> => {
+const connectDB = async () => {
   try {
-    const connection = await mongoose.connect(MONGODB_URI);
-    console.log(`📊 MongoDB Connected: ${connection.connection.host}`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error(`Error connecting to MongoDB: ${error.message}`);
-    } else {
-      console.error('Unknown error connecting to MongoDB');
-    }
+    await mongoose.connect(mongoURI);
+    console.log("MongoDB connected successfully");
+  } catch (err) {
+    console.error("Error connecting to MongoDB:", err);
     process.exit(1);
   }
 };
 
-export const closeDB = async (): Promise<void> => {
-  try {
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed');
-  } catch (error) {
-    console.error('Error closing MongoDB connection:', error);
-  }
-};
+export default connectDB;

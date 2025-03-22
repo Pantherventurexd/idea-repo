@@ -1,40 +1,31 @@
-import express, { Express, Request, Response } from "express";
-import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
-import { connectDB } from "./config/db";
-import apiRoutes from "./routes/api";
-import authRoutes from "./routes/auth";
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors"; // Importing cors
+import userRoute from "./routes/userRoute";
 
-dotenv.config();
+const app = express();
 
-connectDB();
+// Enable CORS for all origins
+app.use(cors());
 
-const app: Express = express();
-const port = process.env.PORT;
-
-app.use(helmet());
+// Or if you want to allow only localhost:3000 (frontend origin), use:
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true,
+    origin: "http://localhost:3000", // Specify the frontend URL here
   })
 );
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server with MongoDB is running");
-});
+mongoose
+  .connect(
+    "mongodb+srv://likhithreddy150:12jVCeYLJ0TmeTw1@cluster0.3fmhl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  )
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error", err));
 
-app.use("/api", apiRoutes);
-app.use("/auth", authRoutes);
+app.use("/api", userRoute);
 
-app.listen(port, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
-});
-
-process.on("unhandledRejection", (err) => {
-  console.log(`Error: ${err}`);
-  process.exit(1);
+app.listen(5000, () => {
+  console.log("Server is running on port 5000");
 });

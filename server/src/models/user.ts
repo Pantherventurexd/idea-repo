@@ -1,18 +1,12 @@
-import mongoose from "mongoose";
+import { Schema, model } from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-    supabase_id: { type: String, required: true, unique: true },
-    email: { type: String, required: true },
-    name: { type: String, default: "Unknown" },
-    image: { type: String, default: "" },
-    provider: { 
-      type: String, 
-      enum: ["google", "github", "twitter", "oauth"],
-      default: "oauth" 
-    },
-    created_at: { type: Date, default: Date.now }
-  });
+const userSchema = new Schema(
+  {
+    email: { type: String, required: true, unique: true },
+    accessToken: { type: String, required: true },
+  },
+  { timestamps: true }
+);
 
-const User = mongoose.model("User", UserSchema);
-
+const User = model("User", userSchema);
 export default User;
