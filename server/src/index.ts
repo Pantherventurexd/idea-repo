@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors"; // Importing cors
 import userRoute from "./routes/userRoute";
-
+import { PORT, MONGO_URI } from "./config/constants";
 const app = express();
 
 // Enable CORS for all origins
@@ -18,14 +18,12 @@ app.use(
 app.use(express.json());
 
 mongoose
-  .connect(
-    "mongodb+srv://likhithreddy150:12jVCeYLJ0TmeTw1@cluster0.3fmhl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-  )
+  .connect(MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error", err));
 
 app.use("/api", userRoute);
 
-app.listen(5000, () => {
-  console.log("Server is running on port 5000");
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });

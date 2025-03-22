@@ -13,8 +13,13 @@
   "description": "",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
+<<<<<<< HEAD
     "axios": "^1.8.4",
     "body-parser": "^1.20.3",
+=======
+    "@types/axios": "^0.9.36",
+    "axios": "^1.8.4",
+>>>>>>> c7187e60714023dcecd2423a43633139e2baf396
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

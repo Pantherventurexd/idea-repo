@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import { supabase } from "../config/supabaseClient";
 import axios from "axios";
 import User from "../models/user";
-import Idea from "../models/Idea";
-
+import Idea from "../models/idea";
+import { GEMINI_API_KEY, GEMINI_API_URL } from "../config/constants";
 interface GeminiResponse {
   candidates: {
     content: {
@@ -18,9 +18,6 @@ interface GeminiAnalysisResult {
   competitors?: string[];
 }
 
-const GEMINI_API_KEY = "AIzaSyDlRbE7MZUgXqO65A74buZHZFb0CDWJSU0";
-const GEMINI_API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 export const analyzeIdeaWithGemini = async (
   ideaText: string
@@ -77,11 +74,7 @@ export const analyzeIdeaWithGemini = async (
       };
     }
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      console.error("Gemini API Error:", error.response?.data || error.message);
-    } else {
-      console.error("Unexpected Error:", error);
-    }
+    console.error("API Error:", error);
     return null;
   }
 };
