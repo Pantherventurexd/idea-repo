@@ -11,6 +11,7 @@ interface AuthState {
   login: (provider: "google" | "github" | "twitter") => Promise<void>;
   logout: () => Promise<void>;
   setAuthCode: (code: string | null) => void;
+  registerWithBackend: (userData: User) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -65,7 +66,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     try {
       await supabase.auth.signOut();
-      set({ user: null, isAuthenticated: false });
+      set({
+        user: null,
+        isAuthenticated: false,
+        authCode: null, // Make sure to clear the auth code as well
+      });
+
+      // Force a page reload to clear any cached state
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
@@ -73,4 +81,46 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setAuthCode: (code: string | null) => set({ authCode: code }),
+  registerWithBackend: async (userData) => {
+    try {
+      const { data } = await supabase.auth.getSession();
+
+      if (!data.session?.access_token) {
+        throw new Error("No access token available");
+      }
+
+      // Determine API URL based on environment
+      const apiBaseUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
+      const apiEndpoint = `${apiBaseUrl}/api/create_user`;
+
+      // Log the token for debugging (remove in production)
+      console.log("Using access token:", data.session.access_token);
+
+      const response = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          // Don't include the access token in the body, only in the header
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Backend registration error:", errorData);
+        throw new Error(
+          errorData.message || "Failed to register user with backend"
+        );
+      }
+
+      console.log("User registered with backend successfully");
+    } catch (error) {
+      console.error("Error registering user with backend:", error);
+      throw error;
+    }
+  },
 }));

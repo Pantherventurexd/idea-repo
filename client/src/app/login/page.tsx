@@ -13,15 +13,12 @@ export default function LoginPage() {
     github: false,
     twitter: false,
   });
-  const { isAuthenticated, isLoading: authLoading, login } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const isOAuthFlow =
-      searchParams?.get("provider") ||
-      window.location.href.includes("auth/callback");
-    const authSuccess = searchParams?.get("authSuccess");
+    const isOAuthFlow = searchParams?.get("provider");
     const authError = searchParams?.get("authError");
 
     // Handle errors based on URL params
@@ -33,47 +30,9 @@ export default function LoginPage() {
       setError("Connection to server failed. Please try again.");
     }
 
-    // If authentication is successful, check the session
-    if (authSuccess === "true") {
-      supabase.auth.getSession().then(async ({ data }) => {
-        if (data.session) {
-          console.log("Session obtained after successful auth:", data.session);
-
-          const user = data.session.user;
-
-          // Make an API call to create the user in your backend
-          try {
-            const response = await fetch(
-              "http://localhost:5000/api/create_user",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  email: user?.email,
-                  accessToken: data.session.access_token,
-                }),
-              }
-            );
-
-            const responseData = await response.json();
-            if (response.ok) {
-              console.log("User created:", responseData);
-            } else {
-              console.error("Error creating user:", responseData);
-              setError(responseData.message);
-            }
-          } catch (error) {
-            console.error("Error making API call:", error);
-            setError("Error creating user. Please try again.");
-          }
-        }
-      });
-    }
-
+   
     // Redirect if already authenticated
-    if (isAuthenticated && !authLoading && !isOAuthFlow) {
+    else if (isAuthenticated && !authLoading && !isOAuthFlow) {
       router.push("/");
     }
   }, [isAuthenticated, authLoading, router, searchParams]);

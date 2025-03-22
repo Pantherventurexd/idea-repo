@@ -13,16 +13,24 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     initialize();
-
+  
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
         useAuthStore.setState({
           user: session.user,
           isAuthenticated: true,
           isLoading: false,
         });
+        
+        // Call backend API to register user
+        try {
+          await useAuthStore.getState().registerWithBackend(session.user);
+        } catch (error) {
+          console.error('Failed to register with backend after authentication', error);
+          // You might want to handle this error (show notification, etc.)
+        }
       } else if (event === "SIGNED_OUT") {
         useAuthStore.setState({
           user: null,
@@ -31,12 +39,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         });
       }
     });
-
+  
     return () => {
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []);
 
   if (isLoading) {
     return (
