@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
+import { MONGODB_URI } from "./constants";
 
-const mongoURI =
-  "mongodb+srv://likhithreddy150:12jVCeYLJ0TmeTw1@cluster0.3fmhl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const mongoURI = MONGODB_URI;
 
 const connectDB = async () => {
   try {
