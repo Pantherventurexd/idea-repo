@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Determine API URL based on environment
       const apiBaseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
-      const apiEndpoint = `${apiBaseUrl}/api/create_user`;
+      const apiEndpoint = `${apiBaseUrl}/api/users/create_user`;
 
       // Log the token for debugging (remove in production)
       console.log("Using access token:", data.session.access_token);

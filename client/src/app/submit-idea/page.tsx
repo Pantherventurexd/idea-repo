@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import { useAuthStore } from "../../store/authStore";
 
 const SubmitIdeaPage: React.FC = () => {
   const [formData, setFormData] = useState<{
@@ -9,7 +10,6 @@ const SubmitIdeaPage: React.FC = () => {
     market: string;
     monetization: string;
     industry: string;
-    accessToken: string;
   }>({
     title: "",
     problem: "",
@@ -17,7 +17,6 @@ const SubmitIdeaPage: React.FC = () => {
     market: "",
     monetization: "",
     industry: "",
-    accessToken: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -33,6 +32,34 @@ const SubmitIdeaPage: React.FC = () => {
     message: string;
   } | null>(null);
 
+
+  const [redirecting, setRedirecting] = useState(false); 
+  const { user, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setRedirecting(true); 
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 5000);
+    }
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex justify-center items-center h-screen w-full">
+        <div className="text-center">
+          <p className="text-xl font-medium">
+            {redirecting
+              ? "You must be logged in to submit an idea. Redirecting to login..."
+              : "Redirecting..."}
+          </p>
+          <p className="text-gray-500">Please wait a moment.</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -47,19 +74,19 @@ const SubmitIdeaPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const accessToken =
-        "eyJhbGciOiJIUzI1NiIsImtpZCI6IkpsTTJWeXdZVU9VNzl2bHciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL296eHdobHZ3a3FmaWJxYXhjZmh0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI2OGI5ZmYzOC05OTlmLTQ0NGYtODVlMy0yNmNjMDU4NGQyZTkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzQyNjQwMTQ1LCJpYXQiOjE3NDI2MzY1NDUsImVtYWlsIjoibGlraGl0aHJlZGR5MTUwQGdtYWlsLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZ29vZ2xlIiwicHJvdmlkZXJzIjpbImdvb2dsZSJdfSwidXNlcl9tZXRhZGF0YSI6eyJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSVJpZ0h5QS1oVkoxcE5qZk9uYzlTM0locTlTSW5sNjBDZERPVFJrQzJOQWM5SUdvZjAzUT1zOTYtYyIsImVtYWlsIjoibGlraGl0aHJlZGR5MTUwQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJsaWtoaXRoIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwibmFtZSI6Imxpa2hpdGgiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJUmlnSHlBLWhWSjFwTmpmT25jOVMzSWhxOVNJbmw2MENkRE9UUmtDMk5BYzlJR29mMDNRPXM5Ni1jIiwicHJvdmlkZXJfaWQiOiIxMTA4NDA2MTc4MzM5MDAxNzg3NDEiLCJzdWIiOiIxMTA4NDA2MTc4MzM5MDAxNzg3NDEifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvYXV0aCIsInRpbWVzdGFtcCI6MTc0MjYzNjU0NX1dLCJzZXNzaW9uX2lkIjoiNmYwYWZjMzctZGFhZC00MWFkLTg1MjYtMjE1MWFkMDhiYTU2IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.pGVOuVz1gWwtB1j3nNZCGYiBluTPX9CDr-IjfYInGO8";
-
-      const response = await fetch("http://localhost:5000/api/submit-idea", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          accessToken,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:7000/api/ideas/submit-idea",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user?.id,
+            ...formData,
+          }),
+        }
+      );
 
       const result = await response.json();
 

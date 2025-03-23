@@ -8,7 +8,7 @@ interface IIdea extends Document {
   monetization: string;
   industry: string;
   submittedAt: Date;
-  accessToken: string;
+  userId: string;
 }
 
 const IdeaSchema: Schema = new Schema(
@@ -20,7 +20,7 @@ const IdeaSchema: Schema = new Schema(
     monetization: { type: String, required: true },
     industry: { type: String, required: true },
     submittedAt: { type: Date, default: Date.now },
-    accessToken: { type: String, required: true },
+    userId: { type: String, ref: "User", required: true },
   },
   {
     timestamps: true,

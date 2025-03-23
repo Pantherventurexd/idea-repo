@@ -1,28 +1,25 @@
 import express from "express";
-import mongoose from "mongoose";
-import cors from "cors"; // Importing cors
-import userRoute from "./routes/userRoute";
-import { PORT, MONGO_URI } from "./config/constants";
+import cors from "cors";
+import { PORT } from "./config/constants";
+import { userRouter, ideaRouter } from "./routes";
+import connectDB from "./config/db";
+
 const app = express();
 
-// Enable CORS for all origins
+connectDB();
+
 app.use(cors());
 
-// Or if you want to allow only localhost:3000 (frontend origin), use:
 app.use(
   cors({
-    origin: "http://localhost:3000", // Specify the frontend URL here
+    origin: "http://localhost:3000",
   })
 );
 
 app.use(express.json());
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error", err));
-
-app.use("/api", userRoute);
+app.use("/api/users", userRouter);
+app.use("/api/ideas", ideaRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
