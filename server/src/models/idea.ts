@@ -9,6 +9,14 @@ interface IIdea extends Document {
   industry: string;
   submittedAt: Date;
   userId: string;
+  plagiarism_score?: number | string;
+  uniqueness_score?: number | string;
+  feasibility_score?: number | string;
+  success_score?: number | string;
+  existing_startups?: { name: string; website: string }[];
+  competitors?: { name: string; website: string }[];
+  business_presence?: Record<string, any>;
+  final_score?: string;
 }
 
 const IdeaSchema: Schema = new Schema(
@@ -21,6 +29,24 @@ const IdeaSchema: Schema = new Schema(
     industry: { type: String, required: true },
     submittedAt: { type: Date, default: Date.now },
     userId: { type: String, ref: "User", required: true },
+    plagiarism_score: { type: Schema.Types.Mixed },
+    uniqueness_score: { type: Schema.Types.Mixed },
+    feasibility_score: { type: Schema.Types.Mixed },
+    success_score: { type: Schema.Types.Mixed },
+    final_score: { type: String, required: true },
+    existing_startups: [
+      {
+        name: { type: String, required: true },
+        website: { type: String, required: true },
+      },
+    ],
+    competitors: [
+      {
+        name: { type: String, required: true },
+        website: { type: String, required: true },
+      },
+    ],
+    business_presence: { type: Object },
   },
   {
     timestamps: true,
