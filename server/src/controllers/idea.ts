@@ -313,3 +313,108 @@ export const getSimilarIdeas = async (
     res.status(500).json({ message: "Internal server error", error });
   }
 };
+
+export const getDetailsFromIdea = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { sentence } = req.body;
+
+  if (!sentence) {
+    res.status(400).json({ message: "Sentence is required" });
+    return;
+  }
+
+  const validIndustries = [
+    "technology",
+    "health",
+    "finance",
+    "education",
+    "ecommerce",
+    "sustainability",
+    "food",
+    "travel"
+  ];
+
+  try {
+    const response = await axios.post<GeminiResponse>(
+      `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+      {
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Given this sentence about a startup idea: "${sentence}"
+
+                Generate a detailed startup idea breakdown with the following components:
+                - A catchy title (max 50 characters)
+                - A clear problem statement (200-300 characters)
+                - An innovative solution (300-400 characters)
+                - A well-defined target market description (100-200 characters)
+                - A specific monetization strategy with 2-3 revenue streams (200-300 characters)
+                - An industry category (MUST be one of these exact values: technology, health, finance, education, ecommerce, sustainability, food, travel)
+
+                Return ONLY a JSON object with these properties: title, problem, solution, market, monetization, and industry.
+                Make sure the industry exactly matches one from the list provided.
+                
+                Return the response as a clean JSON object without any markdown or formatting.`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        },
+      }
+    );
+
+    let aiResponse = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiResponse) {
+      res.status(500).json({ message: "Failed to generate idea details" });
+      return;
+    }
+
+    try {
+      aiResponse = aiResponse
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*$/g, '')
+        .trim();
+
+      const ideaDetails = JSON.parse(aiResponse);
+
+      // Validate that all required fields are present
+      const requiredFields = ['title', 'problem', 'solution', 'market', 'monetization', 'industry'];
+      const missingFields = requiredFields.filter(field => !ideaDetails[field]);
+
+      if (missingFields.length > 0) {
+        res.status(500).json({ 
+          message: "Generated response is missing required fields",
+          missingFields 
+        });
+        return;
+      }
+
+      // Validate that the industry is one of the valid options
+      if (!validIndustries.includes(ideaDetails.industry.toLowerCase())) {
+        ideaDetails.industry = "technology"; // Default to technology if invalid
+      }
+
+      res.status(200).json({
+        success: true,
+        ideaDetails
+      });
+    } catch (error) {
+      console.error('JSON Parse Error:', error);
+      res.status(500).json({ 
+        message: "Failed to parse AI response",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  } catch (error) {
+    console.error("Generate Idea Details Error:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};

@@ -21,6 +21,8 @@ const SubmitIdeaPage: React.FC = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isLoadingAI, setIsLoadingAI] = useState<boolean>(false);
+  const [aiPrompt, setAiPrompt] = useState<string>("");
   const [analysis, setAnalysis] = useState<{
     plagiarism_score: number;
     uniqueness_score: string;
@@ -80,7 +82,7 @@ const SubmitIdeaPage: React.FC = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:7000/api/ideas/submit-idea",
+        "http://localhost:3000/api/ideas/submit-idea",
         {
           method: "POST",
           headers: {
@@ -118,6 +120,42 @@ const SubmitIdeaPage: React.FC = () => {
     }
   };
 
+  const handleAIGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      alert("Please enter your idea description first!");
+      return;
+    }
+
+    setIsLoadingAI(true);
+    try {
+      const response = await fetch("http://localhost:3000/api/ideas/get-idea", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sentence: aiPrompt,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success && data.ideaDetails) {
+        setFormData({
+          title: data.ideaDetails.title,
+          problem: data.ideaDetails.problem,
+          solution: data.ideaDetails.solution,
+          market: data.ideaDetails.market,
+          monetization: data.ideaDetails.monetization,
+          industry: data.ideaDetails.industry,
+        });
+      }
+    } catch (error) {
+      alert("Failed to generate idea details. Please try again.");
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
+
   const renderResultScreen = () => {
     return (
       <ResultScreen
@@ -146,6 +184,70 @@ const SubmitIdeaPage: React.FC = () => {
                   will evaluate your submission and, if approved, you&apos;ll
                   gain access to 10 more ideas.
                 </p>
+              </div>
+
+              {/* AI Form Filling Section */}
+              <div className="px-4 py-5 bg-gray-50 sm:p-6 border-b border-gray-200">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium leading-6 text-gray-900">
+                    Use our AI to help fill the form
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Describe your idea in a detail and let our AI help you structure it.
+                  </p>
+                  <div className="mt-2">
+                    <div className="relative">
+                      <textarea
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
+                        placeholder="Describe your startup idea here..."
+                        rows={3}
+                      />
+                      <div className="mt-3">
+                        <p className="text-sm text-amber-600">
+                          ⚠️ Warning: Your idea should be unique as our AI will check for its authenticity. Please modify the generated content to make it truly yours.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={handleAIGenerate}
+                        disabled={isLoadingAI}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        {isLoadingAI ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Generating...
+                          </>
+                        ) : (
+                          "Generate with AI"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <form
