@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, PanInfo } from "framer-motion";
-
+import { useAuthStore } from "@/store/authStore";
 // Define the type for an Idea
 interface Idea {
   id: number;
@@ -17,87 +17,42 @@ interface Idea {
 }
 
 const BrowseIdeasPage: React.FC = () => {
-  // Sample ideas data - in production this would come from your API
-  const [ideas, setIdeas] = useState<Idea[]>([
-    {
-      id: 1,
-      title: "AI-Powered Personal Shopping Assistant",
-      problem:
-        "Online shopping is overwhelming with too many options and reviews to sort through.",
-      solution:
-        "An AI that learns your style, budget, and preferences to recommend products across multiple stores.",
-      industry: "ecommerce",
-      creator: "Alex Chen",
-      createdAt: "2025-03-01",
-      likes: 128,
-      comments: 24,
-    },
-    {
-      id: 2,
-      title: "Community Solar Sharing Platform",
-      problem:
-        "Many people want to use solar energy but lack suitable roof space or can't afford installation.",
-      solution:
-        "A platform connecting property owners with excess solar capacity to those who want to purchase clean energy credits locally.",
-      industry: "sustainability",
-      creator: "Maria Rodriguez",
-      createdAt: "2025-02-28",
-      likes: 95,
-      comments: 18,
-    },
-    {
-      id: 3,
-      title: "Peer-to-Peer Mental Health Support",
-      problem:
-        "Traditional therapy is expensive and often has long waiting lists.",
-      solution:
-        "A secure platform matching people with similar experiences for mutual support, guided by AI and overseen by professionals.",
-      industry: "health",
-      creator: "James Wilson",
-      createdAt: "2025-02-22",
-      likes: 156,
-      comments: 31,
-    },
-    {
-      id: 4,
-      title: "Automated Cooking Assistant",
-      problem:
-        "Busy professionals want to cook healthy meals but lack time and skills.",
-      solution:
-        "Smart kitchen device that guides cooking with step-by-step instructions and automatically measures ingredients.",
-      industry: "food",
-      creator: "Priya Patel",
-      createdAt: "2025-02-18",
-      likes: 87,
-      comments: 14,
-    },
-    {
-      id: 5,
-      title: "Microlearning for Essential Job Skills",
-      problem:
-        "Traditional education doesn't prepare students for specific job skills needed in today's market.",
-      solution:
-        "Platform offering 15-minute daily microlessons created by industry experts to build specific job-ready skills.",
-      industry: "education",
-      creator: "David Johnson",
-      createdAt: "2025-02-15",
-      likes: 102,
-      comments: 27,
-    },
-    {
-      id: 6,
-      title: "Construction Waste Marketplace",
-      problem:
-        "Construction projects generate massive waste that often ends up in landfills.",
-      solution:
-        "Platform connecting builders with excess materials to other projects that can use them, reducing waste and costs.",
-      industry: "sustainability",
-      creator: "Sophie Martin",
-      createdAt: "2025-02-10",
-      likes: 74,
-      comments: 19,
-    },
-  ]);
+  const { user } = useAuthStore();
+  // Replace the useState initialization with an empty array
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+
+  // Add a loading state
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Add this useEffect to fetch ideas when the component mounts
+  useEffect(() => {
+    const fetchIdeas = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          "http://localhost:7000/api/ideas/get-ideas"
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch ideas");
+        }
+
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.ideas)) {
+          setIdeas(data.ideas);
+        } else {
+          console.error("Invalid response format:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching ideas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIdeas();
+  }, []);
 
   const [filteredIdeas, setFilteredIdeas] = useState<Idea[]>(ideas);
   const [selectedIndustry, setSelectedIndustry] = useState<string>("all");
@@ -163,11 +118,44 @@ const BrowseIdeasPage: React.FC = () => {
     );
   };
 
+  const handleSwipeRight = async (ideaId: number) => {
+    if (!user) return;
+
+    try {
+      const response = await fetch(
+        "http://localhost:7000/api/ideas/swipe-right",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            ideaId: ideaId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to register interest");
+      }
+
+      // Successfully registered interest on the server
+      console.log("Successfully expressed interest in idea");
+    } catch (error) {
+      console.error("Error registering interest:", error);
+    }
+  };
+
   // New functions for swiping
   const handleSwipe = (info: PanInfo) => {
     if (info.offset.x > 100) {
       // Swiped right - add to bucket list
       addToBucketList();
+      // Also register interest on the server
+      if (currentIdea) {
+        handleSwipeRight(currentIdea.id);
+      }
     } else if (info.offset.x < -100) {
       // Swiped left - skip
       nextIdea();
@@ -218,36 +206,35 @@ const BrowseIdeasPage: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex flex-row space-x-2 justify-end w-full">
-              
-                <button
-                  onClick={() => setShowBucketList(!showBucketList)}
-                  className="inline-flex items-center px-3 md:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              <button
+                onClick={() => setShowBucketList(!showBucketList)}
+                className="inline-flex items-center px-3 md:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                {showBucketList
+                  ? "Back to Swiping"
+                  : `Bucket List (${bucketList.length})`}
+              </button>
+              <Link
+                href="/submit-idea"
+                className="inline-flex items-center px-3 md:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <svg
+                  className="mr-2 h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  {showBucketList
-                    ? "Back to Swiping"
-                    : `Bucket List (${bucketList.length})`}
-                </button>
-                <Link
-                  href="/submit-idea"
-                  className="inline-flex items-center px-3 md:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  <svg
-                    className="mr-2 h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  Submit New Idea
-                </Link>
-            
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Submit New Idea
+              </Link>
+
               <button
                 onClick={() => setFiltersVisible(!filtersVisible)}
                 className="inline-flex items-center p-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -470,7 +457,11 @@ const BrowseIdeasPage: React.FC = () => {
           ) : (
             // Swipeable Cards View
             <div className="flex justify-center items-center mt-8">
-              {filteredIdeas.length === 0 ? (
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : filteredIdeas.length === 0 ? (
                 <div className="bg-white shadow sm:rounded-lg p-6 text-center">
                   <svg
                     className="mx-auto h-12 w-12 text-gray-400"

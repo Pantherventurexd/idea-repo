@@ -1,5 +1,5 @@
 import React from "react";
-import { useRouter } from "next/router";
+import Link from "next/link";
 
 interface ResultScreenProps {
   submitResult: {
@@ -26,8 +26,6 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
   analysis,
   formData,
 }) => {
-  const router = useRouter();
-
   // Function to calculate color based on score
   const getScoreColor = (score: string | number) => {
     const numScore = typeof score === "string" ? parseInt(score) : score;
@@ -245,12 +243,12 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
                 Your submission has unlocked access to 10 new startup ideas
                 curated for your profile.
               </p>
-              <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md transition"
-                onClick={() => router.push("/browse-idea")}
+              <Link
+                href="/browse-idea"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md transition inline-block"
               >
                 View Ideas
-              </button>
+              </Link>
             </div>
             <div className="flex-1 bg-white p-4 rounded-lg border border-indigo-100 shadow-sm">
               <h4 className="font-semibold text-indigo-700 mb-2">

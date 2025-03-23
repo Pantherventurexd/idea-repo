@@ -17,6 +17,7 @@ interface IIdea extends Document {
   competitors?: { name: string; website: string }[];
   business_presence?: Record<string, any>;
   final_score?: string;
+  interested_users?: string[];
 }
 
 const IdeaSchema: Schema = new Schema(
@@ -47,6 +48,7 @@ const IdeaSchema: Schema = new Schema(
       },
     ],
     business_presence: { type: Object },
+    interested_users: { type: [String], required: false },
   },
   {
     timestamps: true,

@@ -87,7 +87,7 @@ export const analyzeIdeaWithGemini = async (
         existing_startups: [],
         competitors: [],
         business_presence: {},
-        final_score: ''
+        final_score: "",
       };
     }
   } catch (error: unknown) {
@@ -143,7 +143,7 @@ export const submitIdea = async (
     const existing_startups = analysisResult?.existing_startups || [];
     const competitors = analysisResult?.competitors || [];
     const business_presence = analysisResult?.business_presence || {};
-    const final_score = analysisResult?.final_score || ""
+    const final_score = analysisResult?.final_score || "";
 
     const newIdea = new Idea({
       title,
@@ -177,11 +177,37 @@ export const submitIdea = async (
         existing_startups,
         competitors,
         business_presence,
-        final_score
+        final_score,
       },
     });
   } catch (error) {
     console.error("Submit Idea Error:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+export const getIdeas = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ideas = await Idea.find().sort({ createdAt: -1 });
+
+    // Transform the data to match the frontend's expected format
+    const formattedIdeas = ideas.map((idea) => ({
+      id: idea._id,
+      title: idea.title,
+      problem: idea.problem,
+      solution: idea.solution,
+      industry: idea.industry,
+      creator: idea.userId, 
+      likes: 0, 
+      comments: 0,
+    }));
+
+    res.status(200).json({
+      success: true,
+      ideas: formattedIdeas,
+    });
+  } catch (error) {
+    console.error("Get Ideas Error:", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 };
