@@ -224,7 +224,16 @@ export const getSimilarIdeas = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { title, problem, solution, market, monetization, industry } = req.body;
+  const { latestIdeaId } = req.body;
+
+  const idea = await Idea.findById(latestIdeaId);
+  if (!idea) {
+    res.status(400).json({ message: "Idea not found" });
+    return;
+  }
+
+  const { title, problem, solution, market, monetization, industry } = idea;
+  console.log( "title", title, "problem", problem, "solution", solution, "market", market, "monetization", monetization, "industry", industry);
 
   if (!title || !problem || !solution || !market || !monetization || !industry) {
     res.status(400).json({ message: "All fields are required" });

@@ -7,11 +7,14 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   authCode: string | null;
+  userIdeaId: string | null;
   initialize: () => Promise<void>;
   login: (provider: "google" | "github" | "twitter") => Promise<void>;
   logout: () => Promise<void>;
   setAuthCode: (code: string | null) => void;
   registerWithBackend: (userData: User) => Promise<void>;
+  setUserIdeaId: (ideaId: string) => void;
+  initializeUserIdeaId: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -19,6 +22,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
   authCode: null,
+  userIdeaId: null,
 
   initialize: async () => {
     try {
@@ -121,6 +125,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       console.error("Error registering user with backend:", error);
       throw error;
+    }
+  },
+
+  setUserIdeaId: (ideaId: string) => {
+    localStorage.setItem('userIdeaId', ideaId);
+    set({ userIdeaId: ideaId });
+  },
+
+  initializeUserIdeaId: () => {
+    const storedIdeaId = localStorage.getItem('latestIdeaId');
+    if (storedIdeaId) {
+      set({ userIdeaId: storedIdeaId });
     }
   },
 }));

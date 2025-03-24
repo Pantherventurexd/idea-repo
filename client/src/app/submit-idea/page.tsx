@@ -41,7 +41,7 @@ const SubmitIdeaPage: React.FC = () => {
   } | null>(null);
 
   const [redirecting, setRedirecting] = useState(false);
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, setUserIdeaId, initializeUserIdeaId } = useAuthStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -94,8 +94,12 @@ const SubmitIdeaPage: React.FC = () => {
           }),
         }
       );
-
       const result = await response.json();
+      if (result.success) {
+        setUserIdeaId(result.idea._id);
+        initializeUserIdeaId();
+        console.log(result.idea._id);
+      }
 
       if (result.success) {
         setSubmitResult({

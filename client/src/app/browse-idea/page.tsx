@@ -17,7 +17,7 @@ interface Idea {
 }
 
 const BrowseIdeasPage: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, userIdeaId } = useAuthStore();
   // Replace the useState initialization with an empty array
   const [ideas, setIdeas] = useState<Idea[]>([]);
 
@@ -30,7 +30,13 @@ const BrowseIdeasPage: React.FC = () => {
       try {
         setLoading(true);
         const response = await fetch(
-          "http://localhost:7000/api/ideas/get-ideas"
+          `http://localhost:7000/api/ideas/get-ideas`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            }
+          }
         );
 
         if (!response.ok) {
