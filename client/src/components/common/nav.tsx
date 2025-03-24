@@ -51,16 +51,45 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
               Features
             </a>
             {isAuthenticated ? (
+
               <>
+              <Link href={"/chat"}>
+              <button className="ml-3 inline-flex items-center cursor-pointer  text-sm font-medium text-gray-500 transition-all">
+                  <svg
+                    className="h-5 w-5 mr-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h18v18H3V3z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 10h8M8 14h8"
+                    />
+                  </svg>
+                  Chat
+                </button>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
                 >
                   Log Out
                 </button>
+                
               </>
             ) : (
               <>
+
                 <button
                   onClick={handleLogin}
                   className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
@@ -118,16 +147,34 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
             >
               Features
             </a>
+            <button
+              onClick={() => {
+                handleLogout();
+                setMobileMenuOpen(false);
+              }}
+              className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-red-700 hover:bg-red-50"
+            >
+              Log Out
+            </button>
             {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-red-700 hover:bg-red-50"
-              >
-                Log Out
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    handleLogin();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-indigo-700 hover:bg-indigo-50"
+                >
+                  Log In
+                </button>
+                <Link
+                  href="/signup"
+                  className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-indigo-800 hover:bg-indigo-50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
             ) : (
               <>
                 <button

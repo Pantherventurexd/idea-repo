@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabaseClient";
+import { ObjectId } from "mongodb";
 
 import User from "../models/user";
-
 
 export const createUser = async (
   req: Request,
@@ -56,7 +56,7 @@ export const createUser = async (
     const newUser = new User({
       email,
       accessToken,
-      supabase_id, 
+      supabase_id,
     });
 
     await newUser.save();
@@ -68,3 +68,47 @@ export const createUser = async (
   }
 };
 
+export const getUsersByIds = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { userIds } = req.body;
+
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    res.status(400).json({ message: "User IDs must be provided as an array" });
+    return;
+  }
+
+  try {
+    // Check if IDs are Supabase UUIDs or MongoDB ObjectIds
+    const query = userIds.some((id) => id.includes("-"))
+      ? { supabase_id: { $in: userIds } } // Use supabase_id for UUID format
+      : {
+          _id: {
+            $in: userIds
+              .map((id) => {
+                try {
+                  return new ObjectId(id);
+                } catch (error) {
+                  return null;
+                }
+              })
+              .filter((id) => id !== null),
+          },
+        };
+
+    console.log("Looking for users with query:", query);
+    const users = await User.find(query, "email");
+    console.log("Found users:", users);
+
+    const userDetails = users.map((user) => ({
+      userId: user._id,
+      email: user.email,
+    }));
+
+    res.status(200).json(userDetails);
+  } catch (error) {
+    console.error("Server error during fetching user details:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};

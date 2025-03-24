@@ -205,8 +205,8 @@ export const getIdeas = async (req: Request, res: Response): Promise<void> => {
       problem: idea.problem,
       solution: idea.solution,
       industry: idea.industry,
-      creator: idea.userId, 
-      likes: 0, 
+      creator: idea.userId,
+      likes: 0,
       comments: 0,
     }));
 
@@ -233,9 +233,29 @@ export const getSimilarIdeas = async (
   }
 
   const { title, problem, solution, market, monetization, industry } = idea;
-  console.log( "title", title, "problem", problem, "solution", solution, "market", market, "monetization", monetization, "industry", industry);
+  console.log(
+    "title",
+    title,
+    "problem",
+    problem,
+    "solution",
+    solution,
+    "market",
+    market,
+    "monetization",
+    monetization,
+    "industry",
+    industry
+  );
 
-  if (!title || !problem || !solution || !market || !monetization || !industry) {
+  if (
+    !title ||
+    !problem ||
+    !solution ||
+    !market ||
+    !monetization ||
+    !industry
+  ) {
     res.status(400).json({ message: "All fields are required" });
     return;
   }
@@ -287,21 +307,21 @@ export const getSimilarIdeas = async (
     }
 
     try {
-      console.log('Raw AI Response:', aiResponse);
-      
+      console.log("Raw AI Response:", aiResponse);
+
       aiResponse = aiResponse
-        .replace(/^```json\s*/g, '')
-        .replace(/```\s*$/g, '')
-        .replace(/^\s*\[\s*/, '[')
-        .replace(/\s*\]\s*$/, ']')
+        .replace(/^```json\s*/g, "")
+        .replace(/```\s*$/g, "")
+        .replace(/^\s*\[\s*/, "[")
+        .replace(/\s*\]\s*$/, "]")
         .trim();
-      
-      console.log('Cleaned AI Response:', aiResponse);
+
+      console.log("Cleaned AI Response:", aiResponse);
 
       const similarIdeas: SimilarIdea[] = JSON.parse(aiResponse);
-      
+
       if (!Array.isArray(similarIdeas) || similarIdeas.length !== 3) {
-        throw new Error('Invalid response format or incorrect number of ideas');
+        throw new Error("Invalid response format or incorrect number of ideas");
       }
 
       res.status(200).json({
@@ -309,12 +329,12 @@ export const getSimilarIdeas = async (
         similarIdeas,
       });
     } catch (error) {
-      console.error('JSON Parse Error:', error);
-      console.error('AI Response that failed to parse:', aiResponse);
-      res.status(500).json({ 
+      console.error("JSON Parse Error:", error);
+      console.error("AI Response that failed to parse:", aiResponse);
+      res.status(500).json({
         message: "Failed to parse AI response",
-        details: error instanceof Error ? error.message : 'Unknown error',
-        rawResponse: aiResponse.substring(0, 500)
+        details: error instanceof Error ? error.message : "Unknown error",
+        rawResponse: aiResponse.substring(0, 500),
       });
     }
   } catch (error) {
@@ -342,7 +362,7 @@ export const getDetailsFromIdea = async (
     "ecommerce",
     "sustainability",
     "food",
-    "travel"
+    "travel",
   ];
 
   try {
@@ -388,20 +408,29 @@ export const getDetailsFromIdea = async (
 
     try {
       aiResponse = aiResponse
-        .replace(/```json\s*/g, '')
-        .replace(/```\s*$/g, '')
+        .replace(/```json\s*/g, "")
+        .replace(/```\s*$/g, "")
         .trim();
 
       const ideaDetails = JSON.parse(aiResponse);
 
       // Validate that all required fields are present
-      const requiredFields = ['title', 'problem', 'solution', 'market', 'monetization', 'industry'];
-      const missingFields = requiredFields.filter(field => !ideaDetails[field]);
+      const requiredFields = [
+        "title",
+        "problem",
+        "solution",
+        "market",
+        "monetization",
+        "industry",
+      ];
+      const missingFields = requiredFields.filter(
+        (field) => !ideaDetails[field]
+      );
 
       if (missingFields.length > 0) {
-        res.status(500).json({ 
+        res.status(500).json({
           message: "Generated response is missing required fields",
-          missingFields 
+          missingFields,
         });
         return;
       }
@@ -413,17 +442,46 @@ export const getDetailsFromIdea = async (
 
       res.status(200).json({
         success: true,
-        ideaDetails
+        ideaDetails,
       });
     } catch (error) {
-      console.error('JSON Parse Error:', error);
-      res.status(500).json({ 
+      console.error("JSON Parse Error:", error);
+      res.status(500).json({
         message: "Failed to parse AI response",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : "Unknown error",
       });
     }
   } catch (error) {
     console.error("Generate Idea Details Error:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+export const getUserIdeas = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    res.status(400).json({ message: "User ID is required" });
+    return;
+  }
+
+  try {
+    const userIdeas = await Idea.find({ userId }).sort({ createdAt: -1 });
+
+    if (userIdeas.length === 0) {
+      res.status(404).json({ message: "No ideas found for this user" });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      ideas: userIdeas,
+    });
+  } catch (error) {
+    console.error("Get User Ideas Error:", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 };
