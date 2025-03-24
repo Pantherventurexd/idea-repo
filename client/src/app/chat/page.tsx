@@ -7,6 +7,7 @@ import { Message, User } from "./types";
 import useIdeaStore from "@/store/idea";
 import { useAuthStore } from "@/store/authStore";
 import { useUserStore } from "@/store/users";
+import { initiateSocket, getSocket, disconnectSocket } from '@/lib/socket';
 
 const Chat: React.FC = () => {
   const { user } = useAuthStore();
@@ -17,6 +18,19 @@ const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [mappedUsers, setMappedUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    initiateSocket('user-auth-token');
+    const socket = getSocket();
+
+    socket.on('message', (msg) => {
+      console.log('New Message:', msg);
+    });
+
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchUserId = async () => {
