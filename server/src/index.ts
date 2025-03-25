@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { PORT } from "./config/constants";
-import { userRouter, ideaRouter, conversationRouter } from "./routes";
+import { userRouter, ideaRouter, conversationRouter, detailsRouter } from "./routes";
 import connectDB from "./config/db";
 import { initSocket } from './socket';
 import http from 'http';
