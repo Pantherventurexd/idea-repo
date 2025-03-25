@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "next/navigation";
+import Modal from "../ui/Modal";
+import { FaFacebookMessenger, FaUser } from "react-icons/fa";
 
 interface NavbarProps {
   onLoginClick?: () => void;
@@ -11,6 +13,7 @@ interface NavbarProps {
 const Navbar = ({ onLoginClick }: NavbarProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, logout } = useAuthStore();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const router = useRouter();
 
   const handleLogin = () => {
@@ -24,6 +27,14 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleProfileClick = () => {
+    setIsProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setIsProfileModalOpen(false);
   };
 
   return (
@@ -51,45 +62,31 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
               Features
             </a>
             {isAuthenticated ? (
-
               <>
-              <Link href={"/chat"}>
-              <button className="ml-3 inline-flex items-center cursor-pointer  text-sm font-medium text-gray-500 transition-all">
-                  <svg
-                    className="h-5 w-5 mr-2"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 3h18v18H3V3z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 10h8M8 14h8"
-                    />
-                  </svg>
-                  Chat
-                </button>
+                <Link href={"/chat"}>
+                  <button className="ml-3 inline-flex items-center cursor-pointer  text-sm font-medium text-gray-500 transition-all">
+                    <FaFacebookMessenger size={16} color="black" />
+                  </button>
                 </Link>
+
+                <button
+                  onClick={handleProfileClick}
+                  className="ml-3 inline-flex items-center cursor-pointer text-sm font-medium text-gray-500 transition-all"
+                >
+                  <span className="text-sm font-medium">
+                    <FaUser size={16} color="black" />
+                  </span>
+                </button>
+
                 <button
                   onClick={handleLogout}
                   className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
                 >
                   Log Out
                 </button>
-                
               </>
             ) : (
               <>
-
                 <button
                   onClick={handleLogin}
                   className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
@@ -198,6 +195,8 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
           </div>
         </div>
       )}
+
+      <Modal isOpen={isProfileModalOpen} onClose={closeProfileModal} />
     </nav>
   );
 };

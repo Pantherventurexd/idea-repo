@@ -1,11 +1,10 @@
 import express from "express";
 import cors from "cors";
 import { PORT } from "./config/constants";
-import { userRouter, ideaRouter } from "./routes";
+import { userRouter, ideaRouter, detailsRouter } from "./routes";
 import connectDB from "./config/db";
-import { initSocket } from './socket';
-import http from 'http';
-
+import { initSocket } from "./socket";
+import http from "http";
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +23,7 @@ app.use(express.json());
 
 app.use("/api/users", userRouter);
 app.use("/api/ideas", ideaRouter);
+app.use("/api/user-details", detailsRouter);
 
 initSocket(server);
 
