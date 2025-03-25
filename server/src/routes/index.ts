@@ -1,5 +1,5 @@
 import userRouter from "./user";
 import ideaRouter from "./idea";
-import detailsRouter from "./userDetails";
+import conversationRouter from "./conversations"
 
-export { userRouter, ideaRouter, detailsRouter };
+export { userRouter, ideaRouter, conversationRouter };

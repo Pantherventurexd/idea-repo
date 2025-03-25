@@ -82,7 +82,7 @@ const SubmitIdeaPage: React.FC = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:3000/api/ideas/submit-idea",
+        "http://localhost:7000/api/ideas/submit-idea",
         {
           method: "POST",
           headers: {
@@ -132,7 +132,7 @@ const SubmitIdeaPage: React.FC = () => {
 
     setIsLoadingAI(true);
     try {
-      const response = await fetch("http://localhost:3000/api/ideas/get-idea", {
+      const response = await fetch("http://localhost:7000/api/ideas/get-idea", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
