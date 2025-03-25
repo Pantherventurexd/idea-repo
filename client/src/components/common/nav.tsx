@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { use, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "next/navigation";
 import Modal from "../ui/Modal";
 import { FaFacebookMessenger, FaUser } from "react-icons/fa";
+import GetModel from "../ui/GetModel";
 
 interface NavbarProps {
   onLoginClick?: () => void;
@@ -14,6 +15,7 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, logout } = useAuthStore();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isProfileDoneOpen, setIsProfileDoneOpen] = useState(false);
   const router = useRouter();
 
   const handleLogin = () => {
@@ -35,6 +37,14 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
 
   const closeProfileModal = () => {
     setIsProfileModalOpen(false);
+  };
+
+  const handleProfileDone = () => {
+    setIsProfileDoneOpen(true);
+  };
+
+  const closeProfileDone = () => {
+    setIsProfileDoneOpen(false);
   };
 
   return (
@@ -75,6 +85,15 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
                 >
                   <span className="text-sm font-medium">
                     <FaUser size={16} color="black" />
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleProfileDone}
+                  className="ml-3 inline-flex items-center cursor-pointer text-sm font-medium text-gray-500 transition-all"
+                >
+                  <span className="text-sm font-medium">
+                    <FaUser size={16} color="pink" />
                   </span>
                 </button>
 
@@ -197,6 +216,7 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
       )}
 
       <Modal isOpen={isProfileModalOpen} onClose={closeProfileModal} />
+      <GetModel isOpen={isProfileDoneOpen} onClose={closeProfileDone} />
     </nav>
   );
 };
