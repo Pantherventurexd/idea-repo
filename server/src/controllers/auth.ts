@@ -98,8 +98,44 @@ export const getUsersByIds = async (
         };
 
     console.log("Looking for users with query:", query);
-    const users = await User.find(query, "email");
+    const users = await User.find(query, "email supabase_id");
     console.log("Found users:", users);
+
+    const userDetails = users.map((user) => ({
+      userId: user.supabase_id,
+      email: user.email,
+    }));
+
+    res.status(200).json(userDetails);
+  } catch (error) {
+    console.error("Server error during fetching user details:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+export const getUsersBySupabaseIds = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { userIds } = req.body;
+
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    res.status(400).json({ message: "User IDs must be provided as an array" });
+    return;
+  }
+
+  try {
+    const users = await User.find(
+      { supabase_id: { $in: userIds } },
+      "email"
+    );
+
+    console.log("Found users:", users);
+
+    if (users.length === 0) {
+      res.status(404).json({ message: "No users found" });
+      return;
+    }
 
     const userDetails = users.map((user) => ({
       userId: user._id,

@@ -7,30 +7,57 @@ import { Message, User } from "./types";
 import useIdeaStore from "@/store/idea";
 import { useAuthStore } from "@/store/authStore";
 import { useUserStore } from "@/store/users";
-import { initiateSocket, getSocket, disconnectSocket } from '@/lib/socket';
+import { disconnectSocket, initiateSocket } from "@/lib/socket";
+import { StartConversationModal } from "./components/StartConversationModal";
+import { useConversationStore } from "@/store/conversation";
 
 const Chat: React.FC = () => {
   const { user } = useAuthStore();
-  const { fetchUsers, userss } = useUserStore();
+  const { fetchUsers, userss, fetchUserBySupabase, userDetails } =
+    useUserStore();
   const { userIdeas, fetchUserIdeas, filterIdeasByInterestedUser } =
     useIdeaStore();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [mappedUsers, setMappedUsers] = useState<User[]>([]);
+  const [socket, setSocket] = useState<any>(null);
+  const [isStartConversationModalOpen, setIsStartConversationModalOpen] =
+    useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null);
+  const { fetchConversation, conversation } = useConversationStore();
 
   useEffect(() => {
-    initiateSocket('user-auth-token');
-    const socket = getSocket();
+    const token = "xyz";
+    const userId = user?.id || "";
 
-    socket.on('message', (msg) => {
-      console.log('New Message:', msg);
-    });
+    if (token && userId) {
+      const socketInstance = initiateSocket(token, userId);
 
-    return () => {
-      disconnectSocket();
-    };
-  }, []);
+      if (socketInstance) {
+        setSocket(socketInstance);
+
+        socketInstance.on("message", (msg) => {
+          console.log("New Message:", msg);
+          setMessages((prevMessages) => [...prevMessages, msg]);
+        });
+
+        socketInstance.on("reconnect", (attemptNumber) => {
+          console.log(`Socket reconnected after ${attemptNumber} attempts`);
+        });
+      }
+
+      return () => {
+        if (socketInstance) {
+          socketInstance.off("message");
+          socketInstance.off("reconnect");
+          disconnectSocket();
+        }
+      };
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -40,8 +67,18 @@ const Chat: React.FC = () => {
       }
     };
 
+    const fetchUser = async () => {
+      const userId = user?.id;
+      if (userId) {
+        fetchUserBySupabase([userId]);
+      }
+    };
+
     fetchUserId();
+    fetchUser();
   }, []);
+
+  console.log(userDetails, "userDetails");
 
   useEffect(() => {
     const response = filterIdeasByInterestedUser(userIdeas);
@@ -104,8 +141,27 @@ const Chat: React.FC = () => {
     setMessages(mockMessages);
   }, [mappedUsers]);
 
+  useEffect(() => {
+    if (userDetails && Array.isArray(userDetails) && userDetails.length > 0) {
+      const userId = userDetails[0].userId;
+      if (userId) {
+        fetchConversation(userId);
+        console.log("Fetching conversations for user:", userId);
+      }
+    }
+  }, [userDetails, fetchConversation]);
+
   const handleSelectUser = (user: User) => {
     setSelectedUser(user);
+    setIsStartConversationModalOpen(true);
+  };
+
+  const handleCloseStartConversationModal = () => {
+    setIsStartConversationModalOpen(false);
+  };
+
+  const handleConversationStart = (conversationId: string) => {
+    setCurrentConversationId(conversationId);
   };
 
   const handleSendMessage = (content: string) => {
@@ -122,7 +178,6 @@ const Chat: React.FC = () => {
 
     setMessages([...messages, newMessage]);
   };
-
   return (
     <div className="fixed inset-0 pt-16 flex bg-white text-gray-900">
       <ChatSidebar
@@ -147,6 +202,17 @@ const Chat: React.FC = () => {
         </div>
       )}
       {selectedUser && <ChatProfile user={selectedUser} />}
+
+      {selectedUser && (
+        <StartConversationModal
+          isOpen={isStartConversationModalOpen}
+          onClose={handleCloseStartConversationModal}
+          user={selectedUser}
+          currentUserId={user?.id || ""}
+          socket={socket}
+          onConversationStart={handleConversationStart}
+        />
+      )}
     </div>
   );
 };
