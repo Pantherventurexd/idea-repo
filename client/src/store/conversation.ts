@@ -1,23 +1,40 @@
 import { create } from "zustand";
-import { getConversation } from "../api/conversation";
-import { Conversation } from "@/type";
 
-interface ConversationState {
-  conversation: Conversation[] | null;
-  fetchConversation: (userId: string) => Promise<void>;
+
+interface Conversation {
+  _id: string;
+  participants: string[];
+  lastMessage?: {
+    sender: string;
+    content: string;
+    timestamp: Date;
+  };
+  otherParticipant?: {
+    id: string;
+    name?: string;
+    email?: string;
+  };
 }
 
-export const useConversationStore = create<ConversationState>((set) => ({
-  conversation: null,
-  fetchConversation: async (userId: string) => {
-    console.log("fetchConversation called with userId:", userId);
-    try {
-      console.log("Making API call to get conversation");
-      const data = await getConversation(userId);
-      console.log("Conversation API response:", data);
-      set({ conversation: data });
-    } catch (error) {
-      console.error("Failed to fetch conversation:", error);
-    }
+interface ConversationState {
+  conversations: Conversation[];
+  selectedConversation: Conversation | null;
+  setConversations: (conversations: Conversation[]) => void;
+  selectConversation: (conversationId: string) => void;
+  clearSelectedConversation: () => void;
+}
+
+export const useConversationStore = create<ConversationState>((set, get) => ({
+  conversations: [],
+  selectedConversation: null,
+
+  setConversations: (conversations) => set({ conversations }),
+
+  selectConversation: (conversationId) => {
+    const { conversations } = get();
+    const conversation = conversations.find((c) => c._id === conversationId);
+    set({ selectedConversation: conversation || null });
   },
+
+  clearSelectedConversation: () => set({ selectedConversation: null }),
 }));

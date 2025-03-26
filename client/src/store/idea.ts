@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { fetchUserIdeas } from "../api/idea";
 
+interface User {
+  email: string;
+  userId: string;
+  supabase_id: string;
+}
+
 interface UserIdea {
   _id: string;
   title: string;
@@ -18,7 +24,7 @@ interface UserIdea {
   existing_startups: object[];
   competitors: object[];
   business_presence: { [key: string]: number };
-  interested_users: string[];
+  interested_users: User[];
   submittedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -30,10 +36,14 @@ interface IdeaStore {
   fetchUserIdeas: (userId: string) => Promise<void>;
   filterIdeasByInterestedUser: (
     userIdeas: UserIdea[]
-  ) => { ideasId: string; title: string; interested_users: string[] }[];
+  ) => {
+    ideasId: string;
+    title: string;
+    interested_users: { email: string; id: string }[];
+  }[];
 }
 
-const useIdeaStore = create<IdeaStore>((set) => ({
+export const useIdeaStore = create<IdeaStore>((set) => ({
   userIdeas: [],
   interestedUser: "",
   fetchUserIdeas: async (userId: string) => {
@@ -46,16 +56,14 @@ const useIdeaStore = create<IdeaStore>((set) => ({
   },
   filterIdeasByInterestedUser: (userIdeas) => {
     return userIdeas
-      .filter(
-        (idea) =>
-          idea.interested_users.length > 0 
-      )
+      .filter((idea) => idea.interested_users.length > 0)
       .map((idea) => ({
         ideasId: idea._id,
         title: idea.title,
-        interested_users: idea.interested_users,
+        interested_users: idea.interested_users.map((user) => ({
+          email: user.email,
+          id: user.userId,
+        })),
       }));
   },
 }));
-
-export default useIdeaStore;

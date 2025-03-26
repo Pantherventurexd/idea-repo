@@ -16,12 +16,12 @@ export const startConversation = async (
     }
 
     // Find MongoDB users by their Supabase IDs
-    const user = await User.findOne({ supabase_id: userId });
-    const otherUser = await User.findOne({ supabase_id: otherUserId });
+    const user = await User.findOne({ _id: userId });
+    const otherUser = await User.findOne({ _id: otherUserId });
 
     if (!user || !otherUser) {
       res.status(404).json({ error: "One or both users not found." });
-      return;
+      return; 
     }
 
     const userObjectId = user._id;

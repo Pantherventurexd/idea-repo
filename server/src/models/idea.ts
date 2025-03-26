@@ -1,5 +1,11 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+interface InterestedUser {
+  email: string;
+  userId: string;
+  supabase_id: string;
+}
+
 interface IIdea extends Document {
   title: string;
   problem: string;
@@ -17,7 +23,7 @@ interface IIdea extends Document {
   competitors?: { name: string; website: string }[];
   business_presence?: Record<string, any>;
   final_score?: string;
-  interested_users?: string[];
+  interested_users?: InterestedUser[];
 }
 
 const IdeaSchema: Schema = new Schema(
@@ -48,7 +54,13 @@ const IdeaSchema: Schema = new Schema(
       },
     ],
     business_presence: { type: Object },
-    interested_users: { type: [String], required: false },
+    interested_users: [
+      {
+        email: { type: String, required: true },
+        userId: { type: String, required: true },
+        supabase_id: { type: String, required: true },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -80,9 +80,8 @@ export const getUsersByIds = async (
   }
 
   try {
-    // Check if IDs are Supabase UUIDs or MongoDB ObjectIds
     const query = userIds.some((id) => id.includes("-"))
-      ? { supabase_id: { $in: userIds } } // Use supabase_id for UUID format
+      ? { supabase_id: { $in: userIds } } 
       : {
           _id: {
             $in: userIds
@@ -102,7 +101,8 @@ export const getUsersByIds = async (
     console.log("Found users:", users);
 
     const userDetails = users.map((user) => ({
-      userId: user.supabase_id,
+      user_id: user._id,
+      supabase_id: user.supabase_id,
       email: user.email,
     }));
 

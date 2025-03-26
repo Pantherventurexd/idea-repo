@@ -24,3 +24,13 @@ export interface Attachment {
   name: string;
   size: number;
 }
+
+export interface Conversation {
+  id: string;
+  participants: string[];
+  // Add other properties your conversation object might have
+  createdAt?: Date;
+  updatedAt?: Date;
+  lastMessage?: string;
+  // etc.
+}

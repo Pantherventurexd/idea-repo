@@ -1,206 +1,264 @@
+"use client";
 import React, { useState, useEffect } from "react";
-import { User, Message } from "../types";
-import Image from "next/image";
+import { Search, MessageCircle, Users, MoreHorizontal } from "lucide-react";
+import { User } from "@/store/users";
+import { getSocket } from "@/lib/socket";
 import { useConversationStore } from "@/store/conversation";
+import { useAuthStore } from "@/store/authStore";
 
 interface ChatSidebarProps {
-  users: User[];
-  messages: Message[];
-  selectedUser: User | null;
-  onSelectUser: (user: User) => void;
+  filteredIdeas?: Array<{
+    ideasId: string;
+    interested_users: Array<{
+      id: string;
+      email: string;
+    }>;
+    title: string;
+  }>;
+  users?: User[];
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
-  users,
-  messages,
-  selectedUser,
-  onSelectUser,
+  filteredIdeas = [],
+  users = [],
 }) => {
-  const { conversation } = useConversationStore();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeSection, setActiveSection] = useState("chats");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState([]);
+  const { selectConversation, selectedConversation } = useConversationStore();
+  const { user } = useAuthStore();
 
-
-
-  // Get the last message for each user
-  const getUserLastMessage = (userId: string) => {
-    const userMessages = messages.filter(
-      (m) =>
-        (m.senderId === userId && m.receiverId === "me") ||
-        (m.senderId === "me" && m.receiverId === userId)
-    );
-    if (userMessages.length === 0) return null; // Return null if no messages
-    return userMessages.sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    )[0];
+  const startConversation = async () => {
+    if (selectedUserId && users) {
+      await fetch(`http://localhost:7000/api/conversation/start-conversation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          otherUserId: selectedUserId,
+          userId: users[0]?.user_id,
+        }),
+      });
+      setIsModalOpen(false);
+    }
   };
 
-  // Filter users based on search query
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleConversationClick = (conversationId: string) => {
+    selectConversation(conversationId);
+    const socket = getSocket();
+    if (socket) {
+      socket.emit("join-room", { conversationId });
+    } else {
+      console.error("Socket not initialized");
+    }
+  };
 
-  // Count online users
+  const fetchConversations = async () => {
+    if (users.length > 0) {
+      try {
+        const response = await fetch(
+          `http://localhost:7000/api/conversation/get-conversation`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: users[0].user_id,
+            }),
+          }
+        );
+        const data = await response.json();
+
+        const processedConversations = data.map((conv) => {
+          const otherParticipantId = conv.participants.find(
+            (id) => id !== user?.id
+          );
+          const otherUser = users.find((u) => u.id === otherParticipantId);
+
+          return {
+            ...conv,
+            otherParticipant: otherUser
+              ? {
+                  id: otherUser.id,
+                  name: otherUser.name || otherUser.email,
+                  email: otherUser.email,
+                }
+              : undefined,
+          };
+        });
+
+        setConversations(processedConversations);
+        useConversationStore.getState().setConversations(processedConversations);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === "chats") {
+      fetchConversations();
+    }
+  }, [activeSection]);
 
   return (
-    <div className="w-80 border-r border-gray-200 flex flex-col overflow-hidden bg-white">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="font-medium">Messages ({messages.length})</h3>
+    <div className="w-96 bg-white border-r border-gray-200 flex flex-col h-screen">
+      {/* Sidebar Header */}
+      <div className="p-4 flex items-center justify-between border-b">
+        <h2 className="text-2xl font-bold">Messages</h2>
+        <div className="flex items-center space-x-2">
+          <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+            <MoreHorizontal size={20} />
+          </button>
         </div>
+      </div>
 
-        {/* Conversations Section */}
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="font-medium">Conversations</h3>
-          <div className="flex-1 overflow-y-auto">
-            {conversation && conversation.length > 0 ? (
-              conversation.map((conv, index) => {
-                const lastMessage = getUserLastMessage(conv.userId);
-                return (
-                  <div
-                key={index}
-                    
-                    className={`flex p-3 border-b border-gray-200 cursor-pointer relative 
-                  
-                    `}
-                    // onClick={() => onSelectUser(conv.user)}
-                  >
-                    {/* User Avatar and Status */}
-                    <div className="relative">
-                     
-                        <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-gray-500">👤</span>
-                        </div>
-                      
-                     
-                    </div>
-                    <div className="ml-3 flex-1 overflow-hidden">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium">Ayush</h4>
-                        {lastMessage && (
-                          <span className="text-xs text-gray-500">
-                            {lastMessage.timestamp.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        )}
-                      </div>
-                      {lastMessage && (
-                        <p className="text-sm text-gray-500 truncate">
-                          {lastMessage.senderId === "me" ? "You: " : ""}
-                          {lastMessage.content}
-                        </p>
-                      )}
-                    </div>
-                    {!lastMessage?.read && lastMessage?.senderId !== "me" && (
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full bg-purple-500"></span>
-                    )}
+      {/* Search Bar */}
+      <div className="p-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search messages"
+            className="w-full p-2 pl-10 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b">
+        <button
+          onClick={() => setActiveSection("chats")}
+          className={`flex-1 p-3 text-center font-semibold ${
+            activeSection === "chats"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-500"
+          }`}
+        >
+          Chats
+        </button>
+        <button
+          onClick={() => setActiveSection("interested")}
+          className={`flex-1 p-3 text-center font-semibold ${
+            activeSection === "interested"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-500"
+          }`}
+        >
+          Interested
+        </button>
+      </div>
+
+      {/* Content Based on Active Section */}
+      <div className="flex-1 overflow-y-auto">
+        {activeSection === "chats" ? (
+          <div className="p-2">
+            {conversations.length > 0 ? (
+              conversations.map((conversation) => (
+                <div
+                  key={conversation._id}
+                  className={`p-3 flex items-center rounded-lg hover:bg-gray-100 cursor-pointer ${
+                    conversation._id === selectedConversation?._id
+                      ? "bg-blue-50"
+                      : ""
+                  }`}
+                  onClick={() => handleConversationClick(conversation._id)}
+                >
+                  <div className="w-12 h-12 bg-blue-500 rounded-full mr-4 flex items-center justify-center text-white text-lg">
+                    {conversation.otherParticipant?.name?.charAt(0) || "U"}
                   </div>
-                );
-              })
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                      <p className="font-semibold text-gray-800">
+                        {conversation.otherParticipant?.name || "User"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(
+                          conversation.lastMessage?.timestamp || Date.now()
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">
+                      {conversation.lastMessage?.content || "No messages yet"}
+                    </p>
+                  </div>
+                </div>
+              ))
             ) : (
               <div className="p-4 text-center text-gray-500">
                 No conversations found
               </div>
             )}
           </div>
-        </div>
-
-        {/* Interested Users Section */}
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="font-medium">
-            Interested Users ({filteredUsers.length})
-          </h3>
-        </div>
-        <div className="p-3 relative">
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full py-2 px-3 pr-8 rounded bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <svg
-            className="w-4 h-4 text-gray-500 absolute right-6 top-1/2 transform -translate-y-1/2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => {
-              const lastMessage = getUserLastMessage(user.id);
-              return (
-                <div
-                  key={user.id}
-                  className={`flex p-3 border-b border-gray-200 cursor-pointer relative ${
-                    selectedUser?.id === user.id
-                      ? "bg-purple-50"
-                      : "hover:bg-purple-50"
-                  }`}
-                  onClick={() => onSelectUser(user)}
-                >
-                  <div className="relative">
-                    {!user.avatar ? (
-                      <Image
-                        src={user.avatar}
-                        alt={user.name}
-                        height={40}
-                        width={40}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-gray-500">👤</span>
+        ) : (
+          <div className="p-2">
+            {filteredIdeas.length > 0 ? (
+              filteredIdeas.map((idea) => (
+                <div key={idea.ideasId} className="mb-4">
+                  <div className="p-3 bg-gray-100 font-medium rounded-lg">
+                    {idea.title}
+                  </div>
+                  {idea.interested_users.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-3 flex items-center justify-between hover:bg-gray-100 rounded-lg cursor-pointer"
+                      onClick={() => {
+                        setSelectedUserId(user.id);
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-blue-500 rounded-full mr-3 flex items-center justify-center text-white">
+                          {user.email.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{user.email}</p>
+                        </div>
                       </div>
-                    )}
-                    <span
-                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                        user.status === "online"
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                      }`}
-                    ></span>
-                  </div>
-                  <div className="ml-3 flex-1 overflow-hidden">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">{user.name}</h4>
-                      {lastMessage && (
-                        <span className="text-xs text-gray-500">
-                          {lastMessage.timestamp.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      )}
                     </div>
-                    {lastMessage && (
-                      <p className="text-sm text-gray-500 truncate">
-                        {lastMessage.senderId === "me" ? "You: " : ""}
-                        {lastMessage.content}
-                      </p>
-                    )}
-                  </div>
-                  {!lastMessage?.read && lastMessage?.senderId !== "me" && (
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full bg-purple-500"></span>
-                  )}
+                  ))}
                 </div>
-              );
-            })
-          ) : (
-            <div className="p-4 text-center text-gray-500">No users found</div>
-          )}
-        </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-gray-500">
+                No interested users found
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Modal for Starting Conversation */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Start Conversation</h2>
+            <p className="text-gray-600 mb-6">
+              Do you want to start a conversation with this user?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                onClick={startConversation}
+              >
+                Start Chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

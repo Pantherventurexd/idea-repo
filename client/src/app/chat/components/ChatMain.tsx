@@ -1,264 +1,238 @@
-import React, { useState, useRef, useEffect } from "react";
-import { User, Message } from "../types";
-import Image from "next/image";
+"use client";
+import { Send, MoreVertical, Paperclip, Smile } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { getSocket } from "@/lib/socket";
+import { useConversationStore } from "@/store/conversation";
+import { User } from "@/store/users";
 
-interface ChatMainProps {
-  selectedUser: User;
-  messages: Message[];
-  onSendMessage: (content: string) => void;
+interface Message {
+  id: string;
+  text: string;
+  sender: "me" | "other";
+  timestamp: Date;
 }
 
-export const ChatMain: React.FC<ChatMainProps> = ({
-  selectedUser,
-  messages,
-  onSendMessage,
-}) => {
-  const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+export const ChatMain = ({ users }: { users?: User[] }) => {
+  const [message, setMessage] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const { selectedConversation } = useConversationStore();
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (selectedConversation) {
+      setMessages([]);
+
+      const fetchMessages = async () => {
+        try {
+          const response = await fetch(
+            `http://localhost:7000/api/messages/${selectedConversation._id}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            setMessages(
+              data.map((msg) => ({
+                id: msg._id,
+                text: msg.content,
+                sender:
+                  users && msg.sender === users[0]?.user_id ? "me" : "other",
+                timestamp: new Date(msg.createdAt || msg.timestamp),
+              }))
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
+      };
+
+      fetchMessages();
+    }
+  }, [selectedConversation, users]);
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    if (socket) {
+      socket.on("message", (newMessage) => {
+        if (newMessage.conversationId === selectedConversation?._id) {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              id: newMessage._id,
+              text: newMessage.content,
+              sender:
+                users && newMessage.senderId === users[0]?.user_id
+                  ? "me"
+                  : "other",
+              timestamp: new Date(newMessage.timestamp),
+            },
+          ]);
+        }
+      });
+
+      return () => {
+        socket.off("message");
+      };
+    }
+  }, [selectedConversation, users]);
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      onSendMessage(newMessage);
-      setNewMessage("");
+  const handleSendMessage = () => {
+    if (
+      message.trim() &&
+      selectedConversation?._id &&
+      users?.length &&
+      users[0]?.user_id
+    ) {
+      const socket = getSocket();
+
+      if (socket) {
+        socket.emit(
+          "message",
+          {
+            user_id: users[0]?.user_id,
+            conversationId: selectedConversation._id,
+            content: message,
+            messageType: "text",
+          },
+          (response) => {
+            if (response.error) {
+              console.error("Error sending message:", response.error);
+            } else {
+              setMessages((prevMessages) => [
+                ...prevMessages,
+                {
+                  id: response._id,
+                  text: message,
+                  sender: "me",
+                  timestamp: new Date(),
+                },
+              ]);
+              setMessage("");
+            }
+          }
+        );
+      } else {
+        console.error("Socket not connected");
+      }
     }
   };
 
-  // Group messages by date
-  const groupMessagesByDate = () => {
-    const groups: { [key: string]: Message[] } = {};
-
-    messages.forEach((message) => {
-      const date = message.timestamp.toLocaleDateString();
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(message);
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
     });
-
-    return groups;
   };
 
-  const messageGroups = groupMessagesByDate();
-
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <div className="flex items-center">
-          <Image
-            src={selectedUser.avatar}
-            alt={selectedUser.name}
-            height={40} width={40}
-            className="w-10 h-10 rounded-full mr-3"
-          />
-          <div>
-            <h3 className="font-medium">{selectedUser.name}</h3>
-            <span
-              className={`text-sm ${
-                selectedUser.status === "online"
-                  ? "text-green-600"
-                  : "text-gray-500"
-              }`}
-            >
-              {selectedUser.status === "online"
-                ? "Online"
-                : "Last seen " +
-                  selectedUser.lastSeen.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-            </span>
+    <div className="flex-1 flex flex-col h-screen">
+      {/* Chat Header */}
+      {selectedConversation ? (
+        <div className="p-4 border-b flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-blue-500 rounded-full mr-4 flex items-center justify-center text-white text-lg">
+              {selectedConversation.otherParticipant?.name?.charAt(0) || "U"}
+            </div>
+            <div>
+              <p className="font-semibold text-lg">
+                {selectedConversation.otherParticipant?.name || "User"}
+              </p>
+              <p className="text-sm text-green-600">Online</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+              <MoreVertical size={20} />
+            </button>
           </div>
         </div>
-        <div className="flex gap-3">
-          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600 hover:text-purple-600">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-              />
-            </svg>
-          </button>
-          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600 hover:text-purple-600">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-              />
-            </svg>
-          </button>
-          <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600 hover:text-purple-600">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-              />
-            </svg>
-          </button>
+      ) : (
+        <div className="p-4 border-b bg-white text-center text-gray-500">
+          Select a conversation to start chatting
         </div>
-      </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
-        {Object.entries(messageGroups).map(([date, msgs]) => (
-          <div key={date} className="space-y-4">
-            <div className="relative flex justify-center">
-              <span className="bg-white text-gray-500 text-xs px-2 relative z-10">
-                {new Date(date).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-200"></div>
-            </div>
-
-            {msgs.map((message) => (
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+        {selectedConversation ? (
+          <div className="flex flex-col space-y-4">
+            {messages.map((msg) => (
               <div
-                key={message.id}
-                className={`flex max-w-[70%] ${
-                  message.senderId === "me" ? "ml-auto" : "mr-auto"
+                key={msg.id}
+                className={`flex ${
+                  msg.sender === "me" ? "justify-end" : "justify-start"
                 }`}
               >
-                {message.senderId !== "me" && (
-                  <Image
-                    src={selectedUser.avatar}
-                    alt={selectedUser.name}
-                    height={32} width={32}
-                    className="w-8 h-8 rounded-full mr-2 self-end"
-                  />
-                )}
                 <div
-                  className={`flex flex-col ${
-                    message.senderId === "me" ? "items-end" : "items-start"
-                  }`}
+                  className={`
+                    p-3 rounded-lg max-w-md relative
+                    ${
+                      msg.sender === "me"
+                        ? "bg-blue-500 text-white"
+                        : "bg-white shadow-sm"
+                    }
+                  `}
                 >
+                  {msg.text}
                   <div
-                    className={`px-4 py-2 rounded-2xl ${
-                      message.senderId === "me"
-                        ? "bg-purple-600 text-white rounded-tr-none"
-                        : "bg-purple-50 text-gray-900 rounded-tl-none"
+                    className={`text-xs mt-1 ${
+                      msg.sender === "me" ? "text-blue-100" : "text-gray-500"
                     }`}
                   >
-                    <p>{message.content}</p>
-                  </div>
-                  <div className="flex items-center mt-1 text-xs text-gray-500 space-x-1">
-                    <span>
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    {message.senderId === "me" && (
-                      <span className={message.read ? "text-purple-500" : ""}>
-                        {message.read ? "✓✓" : "✓"}
-                      </span>
-                    )}
+                    {msg.timestamp && formatTime(msg.timestamp)}
                   </div>
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
-        ))}
-        <div ref={messagesEndRef} />
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-500">
+            Select a conversation to view messages
+          </div>
+        )}
       </div>
 
-      <form
-        className="flex items-center p-4 border-t border-gray-200 gap-3"
-        onSubmit={handleSendMessage}
-      >
-        <button type="button" className="text-gray-500 hover:text-purple-600">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+      {/* Message Input */}
+      {selectedConversation && (
+        <div className="p-4 border-t bg-white flex items-center space-x-2">
+          <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+            <Paperclip size={20} />
+          </button>
+          <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+            <Smile size={20} />
+          </button>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+            placeholder="Type a message..."
+            className="flex-1 p-2 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleSendMessage}
+            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            disabled={!message.trim()}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-            />
-          </svg>
-        </button>
-        <input
-          type="text"
-          placeholder="Type a message..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          className="flex-1 py-2 px-4 bg-gray-100 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-        />
-        <button type="button" className="text-gray-500 hover:text-purple-600">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </button>
-        <button
-          type="submit"
-          disabled={!newMessage.trim()}
-          className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            newMessage.trim()
-              ? "bg-purple-600 text-white"
-              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-          </svg>
-        </button>
-      </form>
+            <Send size={20} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
