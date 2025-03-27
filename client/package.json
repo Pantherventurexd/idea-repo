@@ -9,11 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@next-auth/supabase-adapter": "^0.2.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/supabase-js": "^2.49.1",
     "axios": "^1.8.4",
+    "canvas-confetti": "^1.9.3",
     "dotenv": "^16.4.7",
     "framer-motion": "^12.5.0",
     "lucide-react": "^0.484.0",

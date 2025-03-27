@@ -72,7 +72,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         );
         const data = await response.json();
 
-        const processedConversations = data.map((conv) => {
+        // Check if data is an array, if not, use data.conversations or an empty array
+        const conversationsArray = Array.isArray(data)
+          ? data
+          : data?.conversations || [];
+
+        const processedConversations = conversationsArray.map((conv) => {
           const otherParticipantId = conv.participants.find(
             (id) => id !== user?.id
           );
@@ -91,7 +96,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         });
 
         setConversations(processedConversations);
-        useConversationStore.getState().setConversations(processedConversations);
+        useConversationStore
+          .getState()
+          .setConversations(processedConversations);
       } catch (error) {
         console.error("Error fetching conversations:", error);
       }
@@ -110,7 +117,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       <div className="p-4 flex items-center justify-between border-b">
         <h2 className="text-2xl font-bold">Messages</h2>
         <div className="flex items-center space-x-2">
-          <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+          <button className="text-gray-600 hover:bg-gray-100 p-1 rounded-full">
             <MoreHorizontal size={20} />
           </button>
         </div>
@@ -204,9 +211,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   <div className="p-3 bg-gray-100 font-medium rounded-lg">
                     {idea.title}
                   </div>
-                  {idea.interested_users.map((user) => (
+                  {idea.interested_users.map((user, key) => (
                     <div
-                      key={user.id}
+                      key={key}
                       className="p-3 flex items-center justify-between hover:bg-gray-100 rounded-lg cursor-pointer"
                       onClick={() => {
                         setSelectedUserId(user.id);

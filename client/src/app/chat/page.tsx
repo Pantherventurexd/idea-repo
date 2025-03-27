@@ -44,7 +44,7 @@ const ChatPage = () => {
   console.log("users", users);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden pt-16">
       <ChatSidebar
         filteredIdeas={filteredIdeas}
         users={Array.isArray(users) ? users : [users]}

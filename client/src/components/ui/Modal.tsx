@@ -85,22 +85,25 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg mx-auto max-w-4xl space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-800">
+        <div className="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-2xl shadow-xl mx-auto max-w-4xl w-full border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 User Details
               </h2>
-              <button onClick={onClose} className="cursor-pointer">
-                <FaTimes size={14} color="red" />
+              <button
+                onClick={onClose}
+                className="cursor-pointer hover:bg-gray-100 p-2 rounded-full transition-colors"
+              >
+                <FaTimes size={16} className="text-gray-500" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Name
                 </label>
@@ -109,23 +112,25 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="mt-2 w-full px-4 py-2 border border-gray-300 "
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                   placeholder="Enter your name"
                 />
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-700">Occupation</p>
-                <div className="flex space-x-3 mt-2">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Occupation
+                </p>
+                <div className="flex flex-wrap gap-3">
                   {["Student", "Founder", "Developer", "Designer"].map(
                     (occ) => (
                       <button
                         key={occ}
                         onClick={() => handleOccupationClick(occ)}
-                        className={`px-5 cursor-pointer py-2 text-sm font-normal transition duration-200 ${
+                        className={`px-5 py-2.5 rounded-lg text-sm font-medium transition duration-200 ${
                           occupation === occ
-                            ? "bg-indigo-600 text-white"
-                            : "bg-white text-black border-2 border-gray-500"
+                            ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
+                            : "bg-white text-gray-700 border border-gray-300 hover:border-indigo-400"
                         }`}
                       >
                         {occ}
@@ -136,10 +141,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               </div>
 
               {occupation === "Student" && (
-                <div>
+                <div className="bg-gradient-to-r from-gray-50 to-white p-5 rounded-xl">
                   <label
                     htmlFor="college"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-sm font-medium text-gray-700 mb-1"
                   >
                     College Name
                   </label>
@@ -148,25 +153,25 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                     id="college"
                     value={college}
                     onChange={(e) => setCollege(e.target.value)}
-                    className="mt-2 w-full px-4 py-2 border border-gray-300"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                     placeholder="Enter your college name"
                   />
                 </div>
               )}
 
               <div>
-                <p className="text-sm font-medium text-gray-700">
+                <p className="text-sm font-medium text-gray-700 mb-2">
                   Field of Interest
                 </p>
-                <div className="flex space-x-3 mt-2">
+                <div className="flex flex-wrap gap-3">
                   {["Technology", "Art", "Science", "Business"].map((field) => (
                     <button
                       key={field}
                       onClick={() => handleFieldOfInterestClick(field)}
-                      className={`px-5 py-2 cursor-pointer text-sm font-normal transition duration-200 ${
+                      className={`px-5 py-2.5 rounded-lg text-sm font-medium transition duration-200 ${
                         fieldOfInterest.includes(field)
-                          ? "bg-indigo-600 text-white"
-                          : "bg-white text-black border-2 border-gray-500"
+                          ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
+                          : "bg-white text-gray-700 border border-gray-300 hover:border-indigo-400"
                       }`}
                     >
                       {field}
@@ -178,39 +183,81 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               <div>
                 <label
                   htmlFor="avatar"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Avatar
                 </label>
-                <div className="mt-2 flex items-center justify-center border-2 border-gray-300 p-4 rounded-lg relative">
-                  <label htmlFor="avatar" className="cursor-pointer">
-                    <FaCamera className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-4xl" />
-                    <input
-                      type="file"
-                      id="avatar"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                    <span className="block mt-2 text-sm text-gray-500">
-                      Choose a file
-                    </span>
-                  </label>
+                <div className="mt-2 flex items-center justify-center border-2 border-dashed border-gray-300 bg-gradient-to-r from-gray-50 to-white p-6 rounded-xl relative">
+                  {avatar ? (
+                    <div className="relative">
+                      <img
+                        src={avatar}
+                        alt="Selected avatar"
+                        className="h-24 w-24 object-cover rounded-full border-2 border-white shadow-md"
+                      />
+                      <label
+                        htmlFor="avatar"
+                        className="absolute -bottom-2 -right-2 bg-indigo-600 text-white p-2 rounded-full cursor-pointer shadow-md hover:bg-indigo-700 transition"
+                      >
+                        <FaCamera size={14} />
+                        <input
+                          type="file"
+                          id="avatar"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="avatar"
+                      className="cursor-pointer flex flex-col items-center"
+                    >
+                      <div className="bg-indigo-100 text-indigo-600 p-3 rounded-full mb-2">
+                        <FaCamera size={24} />
+                      </div>
+                      <input
+                        type="file"
+                        id="avatar"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                      <span className="text-sm text-gray-600">
+                        Click to upload an image
+                      </span>
+                    </label>
+                  )}
                 </div>
                 {avatarSelected && (
-                  <p className="mt-2 text-green-500 text-sm">
+                  <p className="mt-2 text-green-500 text-sm flex items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
                     Avatar selected successfully!
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-4">
+            <div className="mt-8 flex justify-end">
               <button
                 onClick={handleSubmit}
-                className="px-6 py-3 bg-indigo-500 text-white  font-semibold hover:bg-indigo-600 transition"
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
               >
-                Submit
+                Save Details
               </button>
             </div>
           </div>
