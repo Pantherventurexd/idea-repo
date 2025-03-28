@@ -1,5 +1,11 @@
 "use client";
-import { Send, MoreVertical, Paperclip, Smile } from "lucide-react";
+import {
+  Send,
+  MoreVertical,
+  Paperclip,
+  Smile,
+  MessageCircle,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { getSocket } from "@/lib/socket";
 import { useConversationStore } from "@/store/conversation";
@@ -142,21 +148,24 @@ export const ChatMain = ({ users }: { users?: User[] }) => {
     <div className="flex-1 flex flex-col h-screen">
       {/* Chat Header */}
       {selectedConversation ? (
-        <div className="p-4 border-b flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="p-4 border-b flex items-center justify-between bg-white sticky top-0 z-10 shadow-sm">
           <div className="flex items-center">
-            <div className="w-12 h-12 bg-blue-500 rounded-full mr-4 flex items-center justify-center text-white text-lg">
+            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mr-3 flex items-center justify-center text-white text-lg shadow-md">
               {selectedConversation.otherParticipant?.name?.charAt(0) || "U"}
             </div>
             <div>
-              <p className="font-semibold text-lg">
+              <p className="font-semibold text-gray-800">
                 {selectedConversation.otherParticipant?.name || "User"}
               </p>
-              <p className="text-sm text-green-600">Online</p>
+              <p className="text-xs text-green-600 flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-1 inline-block"></span>
+                Online
+              </p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
-              <MoreVertical size={20} />
+          <div className="flex items-center space-x-2">
+            <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors">
+              <MoreVertical size={18} />
             </button>
           </div>
         </div>
@@ -169,7 +178,7 @@ export const ChatMain = ({ users }: { users?: User[] }) => {
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
         {selectedConversation ? (
-          <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-3">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -177,43 +186,56 @@ export const ChatMain = ({ users }: { users?: User[] }) => {
                   msg.sender === "me" ? "justify-end" : "justify-start"
                 }`}
               >
+                {msg.sender === "other" && (
+                  <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mr-2 flex-shrink-0 self-end mb-1">
+                    {selectedConversation.otherParticipant?.name?.charAt(0) ||
+                      "U"}
+                  </div>
+                )}
                 <div
                   className={`
-                    p-3 rounded-lg max-w-md relative
+                    p-3 rounded-2xl max-w-xs sm:max-w-md break-words
                     ${
                       msg.sender === "me"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white shadow-sm"
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-none shadow-sm"
+                        : "bg-white rounded-tl-none shadow-sm border border-gray-100"
                     }
                   `}
                 >
-                  {msg.text}
+                  <div className="whitespace-pre-wrap">{msg.text}</div>
                   <div
-                    className={`text-xs mt-1 ${
-                      msg.sender === "me" ? "text-blue-100" : "text-gray-500"
+                    className={`text-xs mt-1 text-right ${
+                      msg.sender === "me" ? "text-indigo-100" : "text-gray-400"
                     }`}
                   >
                     {msg.timestamp && formatTime(msg.timestamp)}
                   </div>
                 </div>
+                {msg.sender === "me" && (
+                  <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full ml-2 flex-shrink-0 self-end mb-1 opacity-0">
+                    {/* This is invisible, just for alignment */}
+                  </div>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            Select a conversation to view messages
+          <div className="h-full flex flex-col items-center justify-center text-gray-400">
+            <MessageCircle size={48} className="mb-3 text-gray-300" />
+            <p className="text-lg font-medium">Select a conversation</p>
+            <p className="text-sm">Choose a contact to start messaging</p>
           </div>
         )}
       </div>
 
       {/* Message Input */}
       {selectedConversation && (
-        <div className="p-4 border-t bg-white flex items-center space-x-2">
-          <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+        <div className="p-3 border-t bg-white flex items-center space-x-2">
+          <button className="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors">
             <Paperclip size={20} />
           </button>
-          <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+          <button className="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors">
             <Smile size={20} />
           </button>
           <input
@@ -222,14 +244,18 @@ export const ChatMain = ({ users }: { users?: User[] }) => {
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
             placeholder="Type a message..."
-            className="flex-1 p-2 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
           />
           <button
             onClick={handleSendMessage}
-            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            className={`p-3 rounded-full transition-all ${
+              message.trim()
+                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
             disabled={!message.trim()}
           >
-            <Send size={20} />
+            <Send size={18} />
           </button>
         </div>
       )}

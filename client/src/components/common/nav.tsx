@@ -3,9 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "next/navigation";
-import Modal from "../ui/Modal";
 import { FaFacebookMessenger, FaUser } from "react-icons/fa";
-import GetModel from "../ui/GetModel";
 
 interface NavbarProps {
   onLoginClick?: () => void;
@@ -14,8 +12,6 @@ interface NavbarProps {
 const Navbar = ({ onLoginClick }: NavbarProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, logout } = useAuthStore();
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isProfileDoneOpen, setIsProfileDoneOpen] = useState(false);
   const router = useRouter();
 
   const handleLogin = () => {
@@ -30,21 +26,7 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
     logout();
   };
 
-  const handleProfileClick = () => {
-    setIsProfileModalOpen(true);
-  };
 
-  const closeProfileModal = () => {
-    setIsProfileModalOpen(false);
-  };
-
-  const handleProfileDone = () => {
-    setIsProfileDoneOpen(true);
-  };
-
-  const closeProfileDone = () => {
-    setIsProfileDoneOpen(false);
-  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-100">
@@ -83,12 +65,12 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
                   <FaFacebookMessenger size={18} />
                 </Link>
 
-                <button
-                  onClick={handleProfileClick}
+                <Link
+                  href={"/profile"}
                   className="text-gray-500 hover:text-indigo-600 transition-colors"
                 >
                   <FaUser size={18} />
-                </button>
+                </Link>
 
                 <button
                   onClick={handleLogout}
@@ -168,15 +150,13 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
                 >
                   Messages
                 </Link>
-                <button
-                  onClick={() => {
-                    handleProfileDone();
-                    setMobileMenuOpen(false);
-                  }}
+                <Link
+                href={"/profile"}
+                 
                   className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Profile
-                </button>
+                </Link>
                 <button
                   onClick={() => {
                     handleLogout();
@@ -210,9 +190,6 @@ const Navbar = ({ onLoginClick }: NavbarProps) => {
           </div>
         </div>
       )}
-
-      <Modal isOpen={isProfileModalOpen} onClose={closeProfileModal} />
-      <GetModel isOpen={isProfileDoneOpen} onClose={closeProfileDone} />
     </nav>
   );
 };
